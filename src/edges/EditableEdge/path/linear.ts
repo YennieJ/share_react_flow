@@ -6,7 +6,27 @@ import { isControlPoint } from './utils';
 // 직선 경로를 생성하는 함수 (수평, 수직선만 허용)
 // points: 직선을 구성하는 포인트 배열
 export function getLinearPath(points: XYPosition[]) {
+  // 포인트가 없는 경우 빈 경로 반환
   if (points.length < 1) return '';
+
+  // 포인트가 1개 또는 2개인 경우 ConnectionLine처럼 중간 포인트 자동 생성
+  if (points.length === 1) {
+    return `M ${points[0].x} ${points[0].y}`;
+  }
+
+  // 포인트가 2개인 경우 (시작점과 끝점만 있는 경우)
+  if (points.length === 2) {
+    const [start, end] = points;
+    // 중간 포인트 계산 (ConnectionLine 방식과 동일)
+    const middleX = (start.x + end.x) / 2;
+    const middlePoints = [
+      { x: middleX, y: start.y },
+      { x: middleX, y: end.y },
+    ];
+
+    // 전체 포인트 배열 재구성
+    points = [start, ...middlePoints, end];
+  }
 
   // SVG 경로 시작점 설정
   let path = `M ${points[0].x} ${points[0].y}`;

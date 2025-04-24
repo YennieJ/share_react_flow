@@ -162,10 +162,9 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
       ref={ref}
       tabIndex={0} // 키보드 포커스 가능하도록 설정
       id={id}
-      className={'nopan nodrag' + (active ? ' active' : '')} // 활성 상태에 따른 클래스 적용
       cx={x} // 중심 x 좌표
       cy={y} // 중심 y 좌표
-      r={active ? 4 : 3} // 활성 상태에 따른 반지름 크기 조정
+      r={4}
       strokeOpacity={active ? 1 : 0.3} // 활성 상태에 따른 테두리 투명도
       stroke={color} // 테두리 색상
       fill={active ? color : 'white'} // 활성 상태에 따른 채우기 색상

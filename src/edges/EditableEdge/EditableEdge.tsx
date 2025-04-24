@@ -50,11 +50,9 @@ export function EditableEdgeComponent({
   source,
   sourceX,
   sourceY,
-  sourcePosition,
   target,
   targetX,
   targetY,
-  targetPosition,
   markerEnd,
   markerStart,
   style,
@@ -67,7 +65,7 @@ export function EditableEdgeComponent({
   const targetOrigin = { x: targetX, y: targetY } as XYPosition;
 
   // 엣지의 색상 설정 (알고리즘에 따라 다름)
-  const color = COLORS[data.algorithm ?? Algorithm.BezierCatmullRom];
+  const color = COLORS[data.algorithm ?? Algorithm.Linear];
 
   // React Flow의 엣지 상태 관리
   const { setEdges } = useReactFlow<BuiltInNode, EditableEdge>();
@@ -103,16 +101,10 @@ export function EditableEdgeComponent({
   const pathPoints = [sourceOrigin, ...data.points, targetOrigin];
 
   // 컨트롤 포인트 계산
-  const controlPoints = getControlPoints(pathPoints, data.algorithm, {
-    fromSide: sourcePosition,
-    toSide: targetPosition,
-  });
+  const controlPoints = getControlPoints(pathPoints, data.algorithm);
 
   // 엣지 경로 생성
-  const path = getPath(pathPoints, data.algorithm, {
-    fromSide: sourcePosition,
-    toSide: targetPosition,
-  });
+  const path = getPath(pathPoints, data.algorithm);
 
   // ID가 할당된 컨트롤 포인트 배열
   const controlPointsWithIds = useIdsForInactiveControlPoints(controlPoints);

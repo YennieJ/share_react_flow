@@ -7,19 +7,11 @@ import { Algorithm, COLORS, DEFAULT_ALGORITHM } from './EditableEdge/constants';
 
 // 자유 그리기 모드에서 포인트 간의 최소 거리 설정
 // 알고리즘에 따라 다른 거리값을 사용
-const DISTANCE = DEFAULT_ALGORITHM === Algorithm.BezierCatmullRom ? 50 : 25;
+const DISTANCE = DEFAULT_ALGORITHM === Algorithm.Linear ? 50 : 25;
 
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시하고 자유 그리기 기능을 제공
-export function ConnectionLine({
-  fromX,
-  fromY,
-  toX,
-  toY,
-  fromPosition,
-  toPosition,
-  connectionStatus,
-}: ConnectionLineComponentProps) {
+export function ConnectionLine({ fromX, fromY, toX, toY, connectionStatus }: ConnectionLineComponentProps) {
   // 연결선 경로와 상태 관리를 위한 스토어 훅
   const { connectionLinePath, setConnectionLinePath } = useAppStore();
   // 자유 그리기 모드 상태 관리
@@ -71,10 +63,7 @@ export function ConnectionLine({
   }, []);
 
   // 연결선 경로 생성
-  const path = getPath([{ x: fromX, y: fromY }, ...connectionLinePath, { x: toX, y: toY }], DEFAULT_ALGORITHM, {
-    fromSide: fromPosition,
-    toSide: toPosition,
-  });
+  const path = getPath([{ x: fromX, y: fromY }, ...connectionLinePath, { x: toX, y: toY }], DEFAULT_ALGORITHM);
 
   // SVG 경로 렌더링
   return (

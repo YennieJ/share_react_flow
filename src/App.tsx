@@ -1,14 +1,5 @@
 import { useCallback } from 'react';
-import {
-  ReactFlow,
-  Background,
-  ConnectionMode,
-  OnConnect,
-  Panel,
-  addEdge,
-  useEdgesState,
-  useNodesState,
-} from '@xyflow/react';
+import { ReactFlow, Background, ConnectionMode, OnConnect, addEdge, useEdgesState, useNodesState } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
 
@@ -16,7 +7,6 @@ import { initialNodes, nodeTypes, initialEdges, edgeTypes } from './initialEleme
 import { useAppStore } from './store';
 import { ControlPointData, EditableEdge } from './edges/EditableEdge';
 import { ConnectionLine } from './edges/ConnectionLine';
-import { Toolbar } from './components/Toolbar';
 import { DEFAULT_ALGORITHM } from './edges/EditableEdge/constants';
 
 const fitViewOptions = { padding: 0.4 };
@@ -68,9 +58,6 @@ export default function EditableEdgeFlow() {
       fitViewOptions={fitViewOptions}
     >
       <Background />
-      <Panel position="top-left">
-        <Toolbar />
-      </Panel>
     </ReactFlow>
   );
 }

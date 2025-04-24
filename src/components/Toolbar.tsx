@@ -8,14 +8,6 @@ import css from './Toolbar.module.css';
 
 const edgeVariants = [
   {
-    algorithm: Algorithm.BezierCatmullRom,
-    label: 'Bezier-Catmull-Rom',
-  },
-  {
-    algorithm: Algorithm.CatmullRom,
-    label: 'Catmull-Rom',
-  },
-  {
     algorithm: Algorithm.Linear,
     label: 'Linear',
   },
@@ -26,9 +18,7 @@ export function Toolbar() {
   const edges = useEdges();
   const { setEdges } = useReactFlow();
 
-  const selectedEdge = edges.find((edge) => edge.selected) as
-    | EditableEdge
-    | undefined;
+  const selectedEdge = edges.find((edge) => edge.selected) as EditableEdge | undefined;
   const onChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setEdges((edges) => {
       return edges.map((edge) => {
@@ -48,11 +38,7 @@ export function Toolbar() {
 
   return (
     <div className={css.toolbar}>
-      <div>
-        {selectedEdge
-          ? `Selected edge: ${selectedEdge.id}`
-          : '👉 Select an edge to change its type here.'}
-      </div>
+      <div>{selectedEdge ? `Selected edge: ${selectedEdge.id}` : '👉 Select an edge to change its type here.'}</div>
       {selectedEdge && (
         <div className={css.edgevariants}>
           {edgeVariants.map((edgeVariant) => (
@@ -62,9 +48,7 @@ export function Toolbar() {
                 id={edgeVariant.algorithm}
                 name="algorithm"
                 value={edgeVariant.algorithm}
-                checked={
-                  selectedEdge?.data?.algorithm === edgeVariant.algorithm
-                }
+                checked={selectedEdge?.data?.algorithm === edgeVariant.algorithm}
                 disabled={!selectedEdge}
                 style={{
                   accentColor: COLORS[edgeVariant.algorithm],

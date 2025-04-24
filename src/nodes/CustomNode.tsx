@@ -9,30 +9,9 @@ import css from './CustomNode.module.css';
 export function CustomNode() {
   return (
     <div className={css.container}>
-      <Handle
-        type="source"
-        position={Position.Top}
-        id="top"
-        className={css.handle}
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        id="left"
-        className={css.handle}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        className={css.handle}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="right"
-        className={css.handle}
-      />
+      <Handle type="source" position={Position.Left} id="left" className={css.handle} />
+
+      <Handle type="source" position={Position.Right} id="right" className={css.handle} />
     </div>
   );
 }

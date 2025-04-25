@@ -1,20 +1,15 @@
 import type { ControlPointData } from '../ControlPoint';
 import type { XYPosition } from '@xyflow/react';
 
-import { isControlPoint } from './utils';
-
 // 직선 경로를 생성하는 함수 (수평, 수직선만 허용)
 // points: 직선을 구성하는 포인트 배열
-export function getLinearPath(points: XYPosition[]) {
+export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
   // 포인트가 없는 경우 빈 경로 반환
   if (points.length < 1) return '';
 
-  // 포인트가 1개 또는 2개인 경우 ConnectionLine처럼 중간 포인트 자동 생성
-  if (points.length === 1) {
-    return `M ${points[0].x} ${points[0].y}`;
-  }
+  let pathPoints: XYPosition[] = [];
 
-  // 포인트가 2개인 경우 (시작점과 끝점만 있는 경우)
+  // 포인트가 2개인 경우 (소스노드와 타겟노드만 있는 경우)
   if (points.length === 2) {
     const [start, end] = points;
     // 중간 포인트 계산 (ConnectionLine 방식과 동일)
@@ -25,16 +20,34 @@ export function getLinearPath(points: XYPosition[]) {
     ];
 
     // 전체 포인트 배열 재구성
-    points = [start, ...middlePoints, end];
+    pathPoints = [start, ...middlePoints, end];
+  }
+  // 컨트롤 포인트가 있는 경우
+  else if (points.length === 3) {
+    const [start, controlPoint, end] = points;
+
+    // 컨트롤 포인트에서 꺾이는 지점 정보 가져오기
+    const cp = controlPoint as ControlPointData;
+
+    if (cp.cornerPoints && cp.cornerPoints.length === 2) {
+      // 꺾이는 지점을 포함한 전체 경로
+      pathPoints = [start, cp.cornerPoints[0], cp.cornerPoints[1], end];
+    } else {
+      // 꺾이는 지점이 없는 경우 기본 경로 (중간점 계산)
+      const middleX = (start.x + end.x) / 2;
+      pathPoints = [start, { x: middleX, y: start.y }, { x: middleX, y: end.y }, end];
+    }
+  } else {
+    pathPoints = [...points];
   }
 
   // SVG 경로 시작점 설정
-  let path = `M ${points[0].x} ${points[0].y}`;
+  let path = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
 
   // 각 포인트를 수평 또는 수직선으로 연결
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const current = points[i];
+  for (let i = 1; i < pathPoints.length; i++) {
+    const prev = pathPoints[i - 1];
+    const current = pathPoints[i];
 
     // x 좌표가 다르면 수평선, y 좌표가 다르면 수직선으로 연결
     if (prev.x !== current.x) {
@@ -55,38 +68,29 @@ export function getLinearPath(points: XYPosition[]) {
 export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]) {
   const controlPoints = [] as ControlPointData[];
 
-  // 각 세그먼트의 중간점을 컨트롤 포인트로 추가
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
+  // 꺾이는 지점을 찾아 컨트롤 포인트 생성
+  // 두 점만 있는 경우(시작점, 끝점) 계단식 중간점 생성
+  if (points.length === 2) {
+    const [start, end] = points;
+    const middleX = (start.x + end.x) / 2;
 
-    // 기존 컨트롤 포인트가 있다면 유지
-    if (isControlPoint(p1)) {
-      controlPoints.push(p1);
-    }
+    // 중간에 하나의 컨트롤 포인트만 생성 (두 꺾이는 지점 사이)
+    const controlPointX = middleX;
+    const controlPointY = (start.y + end.y) / 2;
 
-    // 수평/수직 경로의 중간 지점 계산
-    let midX = p1.x;
-    let midY = p1.y;
+    // 컨트롤 포인트 생성
+    const controlPoint: ControlPointData = {
+      id: `spline-${window.crypto.randomUUID()}`,
+      x: controlPointX,
+      y: controlPointY,
+      // 꺾이는 지점의 정보 저장 (컨트롤 포인트가 이동할 때 함께 이동시키기 위함)
+      cornerPoints: [
+        { x: middleX, y: start.y }, // 첫 번째 꺾이는 지점
+        { x: middleX, y: end.y }, // 두 번째 꺾이는 지점
+      ],
+    };
 
-    if (p1.x !== p2.x) {
-      // 수평선의 중간점
-      midX = (p1.x + p2.x) / 2;
-      midY = p1.y;
-    } else if (p1.y !== p2.y) {
-      // 수직선의 중간점
-      midX = p1.x;
-      midY = (p1.y + p2.y) / 2;
-    }
-
-    // 중간 지점에 새로운 컨트롤 포인트 추가
-    controlPoints.push({
-      prev: 'id' in p1 ? p1.id : undefined, // 이전 포인트의 ID 설정
-      id: `spline-${window.crypto.randomUUID()}`, // 고유 ID 생성
-      active: false, // 기본적으로 비활성 상태
-      x: midX, // 수평/수직 경로의 중간 x 좌표
-      y: midY, // 수평/수직 경로의 중간 y 좌표
-    });
+    controlPoints.push(controlPoint);
   }
 
   return controlPoints;

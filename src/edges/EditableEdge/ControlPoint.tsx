@@ -6,8 +6,8 @@ import { useReactFlow, useStore } from '@xyflow/react';
 // 컨트롤 포인트의 데이터 타입 정의
 export type ControlPointData = XYPosition & {
   id: string; // 포인트의 고유 식별자
-  active?: boolean; // 포인트의 활성화 상태
   prev?: string; // 이전 포인트의 ID
+  cornerPoints?: XYPosition[]; // 꺾이는 지점들의 좌표
 };
 
 // 컨트롤 포인트 컴포넌트의 props 타입 정의
@@ -17,7 +17,6 @@ export type ControlPointProps = {
   x: number; // x 좌표
   y: number; // y 좌표
   color: string; // 포인트의 색상
-  active?: boolean; // 포인트의 활성화 상태
   setControlPoints: (
     // 컨트롤 포인트 업데이트 함수
     update: (points: ControlPointData[]) => ControlPointData[],
@@ -26,7 +25,7 @@ export type ControlPointProps = {
 
 // 컨트롤 포인트 컴포넌트
 // 엣지의 모양을 조정하는 데 사용되는 포인트를 렌더링하고 관리
-export function ControlPoint({ id, index, x, y, color, active, setControlPoints }: ControlPointProps) {
+export function ControlPoint({ id, index, x, y, color, setControlPoints }: ControlPointProps) {
   // React Flow의 DOM 컨테이너와 화면 좌표 변환 함수
   const container = useStore((store) => store.domNode);
   const { screenToFlowPosition } = useReactFlow();
@@ -41,21 +40,42 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
   const updatePosition = useCallback(
     (pos: XYPosition) => {
       setControlPoints((points) => {
-        const shouldActivate = !active;
-        if (shouldActivate) {
-          // 비활성 포인트를 활성화할 때의 로직
-          if (index !== 0) {
-            return points.flatMap((p, i) => (i === index * 0.5 - 1 ? [p, { ...pos, id, active: true }] : p));
-          } else {
-            return [{ ...pos, id, active: true }, ...points];
-          }
+        // 현재 포인트 찾기
+        const point = points.find((p) => p.id === id);
+
+        if (!point) {
+          return points; // 포인트를 찾지 못하면 기존 배열 반환
+        }
+
+        if (point?.cornerPoints) {
+          // 이동 오프셋 계산
+          const deltaX = pos.x - point.x;
+
+          // 컨트롤 포인트의 새 위치와 함께 꺾이는 지점들도 업데이트
+          const updatedPoints = points.map((p) => {
+            if (p.id === id) {
+              const updatedPoint = {
+                ...p,
+                x: pos.x,
+                y: pos.y,
+                cornerPoints: p.cornerPoints?.map((cp) => ({
+                  x: cp.x + deltaX, // x 좌표만 이동 (y는 고정)
+                  y: cp.y,
+                })),
+              };
+              return updatedPoint;
+            }
+            return p;
+          });
+          return updatedPoints;
         } else {
-          // 활성 포인트의 위치만 업데이트
-          return points.map((p) => (p.id === id ? { ...p, ...pos } : p));
+          // cornerPoints가 없는 경우 단순히 위치만 업데이트
+          const updatedPoints = points.map((p) => (p.id === id ? { ...p, ...pos } : p));
+          return updatedPoints;
         }
       });
     },
-    [id, active, index, setControlPoints],
+    [id, setControlPoints],
   );
 
   // 포인트 삭제 핸들러
@@ -78,13 +98,13 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {
       switch (e.key) {
-        case 'Enter':
-        case 'Space':
-          if (!active) {
-            e.preventDefault();
-          }
-          updatePosition({ x, y }); // 현재 위치로 포인트 업데이트
-          break;
+        // case 'Enter':
+        // case 'Space':
+        //   if (!active) {
+        //     e.preventDefault();
+        //   }
+        //   updatePosition({ x, y }); // 현재 위치로 포인트 업데이트
+        //   break;
 
         case 'Backspace':
         case 'Delete':
@@ -112,7 +132,7 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
           break;
       }
     },
-    [active, updatePosition, x, y, deletePoint],
+    [updatePosition, x, y, deletePoint],
   );
 
   // EFFECTS -------------------------------------------------------------------
@@ -120,7 +140,7 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
   // 드래그 이벤트 처리
   // 마우스/터치로 포인트를 드래그할 때의 동작 정의
   useEffect(() => {
-    if (!container || !active || !dragging) return;
+    if (!container || !dragging) return;
 
     // 포인터 이동 이벤트 핸들러
     const onPointerMove = (e: PointerEvent) => {
@@ -130,10 +150,6 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
     // 포인터 업 이벤트 핸들러
     const onPointerUp = (e: PointerEvent) => {
       container.removeEventListener('pointermove', onPointerMove);
-
-      if (!active) {
-        e.preventDefault();
-      }
 
       setDragging(false);
       updatePosition(screenToFlowPosition({ x: e.clientX, y: e.clientY }));
@@ -152,7 +168,7 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
 
       setDragging(false);
     };
-  }, [id, container, dragging, active, screenToFlowPosition, setControlPoints, updatePosition]);
+  }, [id, container, dragging, screenToFlowPosition, setControlPoints, updatePosition]);
 
   // RENDER --------------------------------------------------------------------
 
@@ -165,16 +181,13 @@ export function ControlPoint({ id, index, x, y, color, active, setControlPoints 
       cx={x} // 중심 x 좌표
       cy={y} // 중심 y 좌표
       r={4}
-      strokeOpacity={active ? 1 : 0.3} // 활성 상태에 따른 테두리 투명도
+      strokeOpacity={1} // 활성 상태에 따른 테두리 투명도
       stroke={color} // 테두리 색상
-      fill={active ? color : 'white'} // 활성 상태에 따른 채우기 색상
+      fill={color} // 활성 상태에 따른 채우기 색상
       style={{ pointerEvents: 'all' }} // 모든 포인터 이벤트 허용
       onContextMenu={(e) => {
         e.preventDefault();
         // 우클릭으로 포인트 삭제
-        if (active) {
-          deletePoint();
-        }
       }}
       onPointerDown={(e) => {
         if (e.button === 2) return; // 우클릭 무시

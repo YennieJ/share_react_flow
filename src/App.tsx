@@ -43,7 +43,6 @@ export default function EditableEdgeFlow() {
                 ...point,
                 id: window.crypto.randomUUID(),
                 prev: i === 0 ? undefined : connectionLinePath[i - 1],
-                active: true,
               } as ControlPointData),
           ),
         },

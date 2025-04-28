@@ -7,7 +7,11 @@ import { useReactFlow, useStore } from '@xyflow/react';
 export type ControlPointData = XYPosition & {
   id: string; // 포인트의 고유 식별자
   prev?: string; // 이전 포인트의 ID
-  cornerPoints?: XYPosition[]; // 꺾이는 지점들의 좌표
+  // 연결된 꺽임 포인트 정보
+  cornerPoints?: {
+    before?: XYPosition & { id: string }; // 이전 꺽임 포인트
+    after?: XYPosition & { id: string }; // 다음 꺽임 포인트
+  };
 };
 
 // 컨트롤 포인트 컴포넌트의 props 타입 정의
@@ -21,11 +25,34 @@ export type ControlPointProps = {
     // 컨트롤 포인트 업데이트 함수
     update: (points: ControlPointData[]) => ControlPointData[],
   ) => void;
+  cornerPoints?: {
+    before?: { id: string; x: number; y: number };
+    after?: { id: string; x: number; y: number };
+  };
 };
 
 // 컨트롤 포인트 컴포넌트
 // 엣지의 모양을 조정하는 데 사용되는 포인트를 렌더링하고 관리
-export function ControlPoint({ id, index, x, y, color, setControlPoints }: ControlPointProps) {
+export function ControlPoint({
+  id,
+  x,
+  y,
+  index,
+  setControlPoints,
+  color,
+  cornerPoints, // cornerPoints를 props로 받음
+}: {
+  id: string;
+  x: number;
+  y: number;
+  index: number;
+  setControlPoints: (update: (points: ControlPointData[]) => ControlPointData[]) => void;
+  color: string;
+  cornerPoints?: {
+    before?: { id: string; x: number; y: number };
+    after?: { id: string; x: number; y: number };
+  };
+}) {
   // React Flow의 DOM 컨테이너와 화면 좌표 변환 함수
   const container = useStore((store) => store.domNode);
   const { screenToFlowPosition } = useReactFlow();
@@ -45,32 +72,37 @@ export function ControlPoint({ id, index, x, y, color, setControlPoints }: Contr
 
         if (!point) {
           return points; // 포인트를 찾지 못하면 기존 배열 반환
-        }
-
-        if (point?.cornerPoints) {
-          // 이동 오프셋 계산
-          const deltaX = pos.x - point.x;
-
-          // 컨트롤 포인트의 새 위치와 함께 꺾이는 지점들도 업데이트
-          const updatedPoints = points.map((p) => {
-            if (p.id === id) {
-              const updatedPoint = {
-                ...p,
-                x: pos.x,
-                y: pos.y,
-                cornerPoints: p.cornerPoints?.map((cp) => ({
-                  x: cp.x + deltaX, // x 좌표만 이동 (y는 고정)
-                  y: cp.y,
-                })),
-              };
-              return updatedPoint;
-            }
-            return p;
-          });
-          return updatedPoints;
         } else {
-          // cornerPoints가 없는 경우 단순히 위치만 업데이트
-          const updatedPoints = points.map((p) => (p.id === id ? { ...p, ...pos } : p));
+          // 컨트롤 포인트 업데이트
+          const updatedControlPoint = { ...point, ...pos };
+
+          // 꺽임 포인트 연결 정보가 있는 경우 해당 포인트도 함께 업데이트
+          if (point.cornerPoints) {
+            // 이동 거리 계산
+            const deltaX = pos.x - point.x;
+            const deltaY = pos.y - point.y;
+
+            // 각 꺽임 포인트에도 같은 변화량 적용
+            const updatedPoints = points.map((p) => {
+              // 꺽임 포인트 중 하나와 ID가 일치하면 업데이트
+              if (point.cornerPoints?.before && p.id === point.cornerPoints.before.id) {
+                return { ...p, x: p.x + deltaX, y: p.y + deltaY };
+              }
+              if (point.cornerPoints?.after && p.id === point.cornerPoints.after.id) {
+                return { ...p, x: p.x + deltaX, y: p.y + deltaY };
+              }
+              // 현재 컨트롤 포인트 업데이트
+              if (p.id === id) {
+                return updatedControlPoint;
+              }
+              return p;
+            });
+
+            return updatedPoints;
+          }
+
+          // 연결 정보가 없는 경우 단순히 컨트롤 포인트만 업데이트
+          const updatedPoints = points.map((p) => (p.id === id ? updatedControlPoint : p));
           return updatedPoints;
         }
       });
@@ -191,6 +223,23 @@ export function ControlPoint({ id, index, x, y, color, setControlPoints }: Contr
       }}
       onPointerDown={(e) => {
         if (e.button === 2) return; // 우클릭 무시
+
+        // 컨트롤 포인트 정보 콘솔에 출력
+        console.log('컨트롤 포인트 정보:', {
+          id,
+          index,
+          position: { x, y },
+          color,
+          // 추가: props로 직접 받은 cornerPoints 정보
+          cornerPoints: cornerPoints,
+        });
+
+        // 디버깅 로그 - 현재 컨트롤 포인트 직접 콘솔
+        console.log('현재 컨트롤 포인트(props):', {
+          id,
+          cornerPoints: cornerPoints,
+        });
+
         updatePosition({ x, y });
         setDragging(true);
       }}

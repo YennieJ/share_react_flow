@@ -19,7 +19,10 @@ const useIdsForInactiveControlPoints = (points: ControlPointData[]) => {
   const ids = useRef<string[]>([]);
 
   if (ids.current.length === points.length) {
-    return points.map((point, i) => (point.id ? point : { ...point, id: ids.current[i] }));
+    return points.map((point, i) => {
+      // ID만 할당하되, 기존 속성(cornerPoints 포함)을 유지
+      return point.id ? point : { ...point, id: ids.current[i] };
+    });
   } else {
     ids.current = [];
 
@@ -27,9 +30,11 @@ const useIdsForInactiveControlPoints = (points: ControlPointData[]) => {
       if (!point.id) {
         const id = window.crypto.randomUUID();
         ids.current[i] = id;
+        // cornerPoints 및 기타 모든 속성 유지
         return { ...point, id: id };
       } else {
         ids.current[i] = point.id;
+        // 기존 모든 속성 유지
         return point;
       }
     });
@@ -87,9 +92,15 @@ export function EditableEdgeComponent({
           if (e.id !== id) return e;
           if (!isEditableEdge(e)) return e;
 
-          const points = e.data?.points ?? [];
-          const data = { ...e.data, points: update(points) };
+          // 기존 points 배열에서 업데이트만 적용
+          const updatedPoints = update(e.data?.points ?? []);
 
+          // 점 개수가 늘어난 경우 체크
+          if (updatedPoints.length > (e.data?.points?.length ?? 0)) {
+            console.log('경고: 컨트롤 포인트 개수가 증가했습니다!');
+          }
+
+          const data = { ...e.data, points: updatedPoints };
           return { ...e, data };
         }),
       );
@@ -103,11 +114,43 @@ export function EditableEdgeComponent({
   // 컨트롤 포인트 계산
   const controlPoints = getControlPoints(pathPoints, data.algorithm);
 
+  // ID가 할당된 컨트롤 포인트 배열 (cornerPoints 정보 유지)
+  const controlPointsWithIds = useIdsForInactiveControlPoints(controlPoints);
+
+  // cornerPoints만 컨트롤 포인트에 추가 (중복 생성 없이)
+  const controlPointsToRender = controlPointsWithIds.map((point, index) => {
+    // 이미 cornerPoints가 있으면 그대로 유지
+    if (point.cornerPoints) {
+      return point;
+    }
+
+    // 필요한 경우에만 cornerPoints 추가
+    if (index > 0 && index < pathPoints.length - 2) {
+      return {
+        ...point,
+        cornerPoints: {
+          before: pathPoints[index]
+            ? {
+                id: `corner-before-${index}`,
+                x: pathPoints[index].x,
+                y: pathPoints[index].y,
+              }
+            : undefined,
+          after: pathPoints[index + 1]
+            ? {
+                id: `corner-after-${index}`,
+                x: pathPoints[index + 1].x,
+                y: pathPoints[index + 1].y,
+              }
+            : undefined,
+        },
+      };
+    }
+    return point;
+  });
+
   // 엣지 경로 생성
   const path = getPath(pathPoints, data.algorithm);
-
-  // ID가 할당된 컨트롤 포인트 배열
-  const controlPointsWithIds = useIdsForInactiveControlPoints(controlPoints);
 
   return (
     <>
@@ -127,8 +170,15 @@ export function EditableEdgeComponent({
 
       {/* 컨트롤 포인트 렌더링 */}
       {shouldShowPoints &&
-        controlPointsWithIds.map((point, index) => (
-          <ControlPoint key={point.id} index={index} setControlPoints={setControlPoints} color={color} {...point} />
+        controlPointsToRender.map((point, index) => (
+          <ControlPoint
+            key={point.id}
+            index={index}
+            setControlPoints={setControlPoints}
+            color={color}
+            cornerPoints={point.cornerPoints}
+            {...point}
+          />
         ))}
     </>
   );

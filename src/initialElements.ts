@@ -58,6 +58,17 @@ export const initialEdges: EditableEdge[] = [
   },
 ];
 
+// {
+//   x: 150.99999809265137,
+//   y: 176,
+//   id: 'prev',
+// },
+// {
+//   x: 150.99999809265137,
+//   y: 26,
+//   id: 'next',
+// },
+
 // export const initialEdges: EditableEdge[] = [
 //   {
 //     id: '3->4',

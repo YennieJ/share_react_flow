@@ -21,22 +21,6 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
 
     // 전체 포인트 배열 재구성
     pathPoints = [start, ...middlePoints, end];
-  }
-  // 컨트롤 포인트가 있는 경우
-  else if (points.length === 3) {
-    const [start, controlPoint, end] = points;
-
-    // 컨트롤 포인트에서 꺾이는 지점 정보 가져오기
-    const cp = controlPoint as ControlPointData;
-
-    if (cp.cornerPoints && cp.cornerPoints.length === 2) {
-      // 꺾이는 지점을 포함한 전체 경로
-      pathPoints = [start, cp.cornerPoints[0], cp.cornerPoints[1], end];
-    } else {
-      // 꺾이는 지점이 없는 경우 기본 경로 (중간점 계산)
-      const middleX = (start.x + end.x) / 2;
-      pathPoints = [start, { x: middleX, y: start.y }, { x: middleX, y: end.y }, end];
-    }
   } else {
     pathPoints = [...points];
   }
@@ -64,33 +48,95 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
 }
 
 // 직선 경로의 컨트롤 포인트를 계산하는 함수
-// points: 직선을 구성하는 포인트 배열
 export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]) {
   const controlPoints = [] as ControlPointData[];
 
-  // 꺾이는 지점을 찾아 컨트롤 포인트 생성
-  // 두 점만 있는 경우(시작점, 끝점) 계단식 중간점 생성
+  // 계단식 경로 포인트 계산 (getLinearPath와 동일한 로직)
+  let pathPoints: XYPosition[] = [];
+
   if (points.length === 2) {
     const [start, end] = points;
     const middleX = (start.x + end.x) / 2;
+    const middlePoints = [
+      { x: middleX, y: start.y, id: `corner-0-${window.crypto.randomUUID().substring(0, 8)}` },
+      { x: middleX, y: end.y, id: `corner-1-${window.crypto.randomUUID().substring(0, 8)}` },
+    ];
 
-    // 중간에 하나의 컨트롤 포인트만 생성 (두 꺾이는 지점 사이)
-    const controlPointX = middleX;
-    const controlPointY = (start.y + end.y) / 2;
+    // 전체 경로 포인트
+    pathPoints = [start, ...middlePoints, end];
 
-    // 컨트롤 포인트 생성
-    const controlPoint: ControlPointData = {
-      id: `spline-${window.crypto.randomUUID()}`,
-      x: controlPointX,
-      y: controlPointY,
-      // 꺾이는 지점의 정보 저장 (컨트롤 포인트가 이동할 때 함께 이동시키기 위함)
-      cornerPoints: [
-        { x: middleX, y: start.y }, // 첫 번째 꺾이는 지점
-        { x: middleX, y: end.y }, // 두 번째 꺾이는 지점
-      ],
-    };
+    // 각 선분마다 컨트롤 포인트 생성
+    for (let i = 0; i < pathPoints.length - 1; i++) {
+      const current = pathPoints[i];
+      const next = pathPoints[i + 1];
 
-    controlPoints.push(controlPoint);
+      // 두 점 사이의 중간 지점 계산
+      const controlPointX = (current.x + next.x) / 2;
+      const controlPointY = (current.y + next.y) / 2;
+
+      // 컨트롤 포인트 생성 (꺽임 포인트 정보 추가)
+      const controlPoint: ControlPointData = {
+        id: `spline-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+        x: controlPointX,
+        y: controlPointY,
+        cornerPoints: {
+          before:
+            i > 0
+              ? {
+                  id: 'id' in pathPoints[i - 1] ? (pathPoints[i - 1] as ControlPointData).id : `generated-${i - 1}`,
+                  x: pathPoints[i - 1].x,
+                  y: pathPoints[i - 1].y,
+                }
+              : undefined,
+          after:
+            i < pathPoints.length - 2
+              ? {
+                  id: 'id' in pathPoints[i + 2] ? (pathPoints[i + 2] as ControlPointData).id : `generated-${i + 2}`,
+                  x: pathPoints[i + 2].x,
+                  y: pathPoints[i + 2].y,
+                }
+              : undefined,
+        },
+      };
+
+      controlPoints.push(controlPoint);
+    }
+  } else if (points.length > 2) {
+    // 3개 이상의 포인트가 이미 있는 경우, 각 인접 포인트 사이에 컨트롤 포인트 생성
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+
+      const controlPointX = (current.x + next.x) / 2;
+      const controlPointY = (current.y + next.y) / 2;
+
+      // cornerPoints 정보 추가
+      const controlPoint: ControlPointData = {
+        id: `spline-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+        x: controlPointX,
+        y: controlPointY,
+        cornerPoints: {
+          before:
+            i > 0
+              ? {
+                  id: 'id' in points[i] ? (points[i] as ControlPointData).id : `point-${i}`,
+                  x: points[i].x,
+                  y: points[i].y,
+                }
+              : undefined,
+          after:
+            i < points.length - 2
+              ? {
+                  id: 'id' in points[i + 1] ? (points[i + 1] as ControlPointData).id : `point-${i + 1}`,
+                  x: points[i + 1].x,
+                  y: points[i + 1].y,
+                }
+              : undefined,
+        },
+      };
+
+      controlPoints.push(controlPoint);
+    }
   }
 
   return controlPoints;

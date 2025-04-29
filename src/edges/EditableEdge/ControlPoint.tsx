@@ -110,63 +110,6 @@ export function ControlPoint({
     [id, setControlPoints],
   );
 
-  // 포인트 삭제 핸들러
-  const deletePoint = useCallback(() => {
-    setControlPoints((points) => points.filter((p) => p.id !== id));
-
-    // 이전 활성 컨트롤 포인트로 포커스 이동
-    const previousControlPoint = ref.current?.previousElementSibling?.previousElementSibling;
-    if (previousControlPoint?.tagName === 'circle' && previousControlPoint.classList.contains('active')) {
-      window.requestAnimationFrame(() => {
-        (previousControlPoint as SVGCircleElement).focus();
-      });
-    }
-  }, []);
-
-  // 키보드 이벤트 핸들러
-  // Enter/Space: 포인트 활성화/비활성화
-  // Delete/Backspace: 포인트 삭제
-  // 화살표 키: 포인트 위치 조정
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent) => {
-      switch (e.key) {
-        // case 'Enter':
-        // case 'Space':
-        //   if (!active) {
-        //     e.preventDefault();
-        //   }
-        //   updatePosition({ x, y }); // 현재 위치로 포인트 업데이트
-        //   break;
-
-        case 'Backspace':
-        case 'Delete':
-          e.stopPropagation(); // 이벤트 버블링 방지
-          deletePoint(); // 포인트 삭제
-          break;
-
-        case 'ArrowLeft':
-          updatePosition({ x: x - 5, y }); // 왼쪽으로 5픽셀 이동
-          break;
-
-        case 'ArrowRight':
-          updatePosition({ x: x + 5, y }); // 오른쪽으로 5픽셀 이동
-          break;
-
-        case 'ArrowUp':
-          updatePosition({ x, y: y - 5 }); // 위로 5픽셀 이동
-          break;
-
-        case 'ArrowDown':
-          updatePosition({ x, y: y + 5 }); // 아래로 5픽셀 이동
-          break;
-
-        default:
-          break;
-      }
-    },
-    [updatePosition, x, y, deletePoint],
-  );
-
   // EFFECTS -------------------------------------------------------------------
 
   // 드래그 이벤트 처리
@@ -224,26 +167,9 @@ export function ControlPoint({
       onPointerDown={(e) => {
         if (e.button === 2) return; // 우클릭 무시
 
-        // 컨트롤 포인트 정보 콘솔에 출력
-        console.log('컨트롤 포인트 정보:', {
-          id,
-          index,
-          position: { x, y },
-          color,
-          // 추가: props로 직접 받은 cornerPoints 정보
-          cornerPoints: cornerPoints,
-        });
-
-        // 디버깅 로그 - 현재 컨트롤 포인트 직접 콘솔
-        console.log('현재 컨트롤 포인트(props):', {
-          id,
-          cornerPoints: cornerPoints,
-        });
-
         updatePosition({ x, y });
         setDragging(true);
       }}
-      onKeyDown={handleKeyPress} // 키보드 이벤트 처리
       onPointerUp={() => setDragging(false)} // 드래그 종료
     />
   );

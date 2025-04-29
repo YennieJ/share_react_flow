@@ -1,4 +1,4 @@
-import { Node } from '@xyflow/react';
+import { MarkerType, Node } from '@xyflow/react';
 
 import { EditableEdge, EditableEdgeComponent } from './edges/EditableEdge';
 import { CustomNode } from './nodes/CustomNode';
@@ -51,23 +51,33 @@ export const initialEdges: EditableEdge[] = [
     sourceHandle: 'right',
     targetHandle: 'left',
     animated: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#FF0072',
+    },
+    style: {
+      strokeWidth: 2,
+      stroke: '#FF0072',
+    },
     data: {
       algorithm: Algorithm.Linear,
-      points: [],
+      points: [
+        {
+          x: 150.99999809265137,
+          y: 176,
+          id: 'prev',
+        },
+        {
+          x: 150.99999809265137,
+          y: 26,
+          id: 'next',
+        },
+      ],
     },
   },
 ];
-
-// {
-//   x: 150.99999809265137,
-//   y: 176,
-//   id: 'prev',
-// },
-// {
-//   x: 150.99999809265137,
-//   y: 26,
-//   id: 'next',
-// },
 
 // export const initialEdges: EditableEdge[] = [
 //   {

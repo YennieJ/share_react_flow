@@ -53,11 +53,9 @@ export function ControlPoint({
     after?: { id: string; x: number; y: number };
   };
 }) {
-  // React Flow의 DOM 컨테이너와 화면 좌표 변환 함수
   const container = useStore((store) => store.domNode);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, flowToScreenPosition } = useReactFlow();
 
-  // 드래그 상태 관리
   const [dragging, setDragging] = useState(false);
   const ref = useRef<SVGCircleElement>(null);
 
@@ -66,84 +64,95 @@ export function ControlPoint({
   // 포인트 위치 업데이트 핸들러
   const updatePosition = useCallback(
     (pos: XYPosition) => {
+      // 현재 컨트롤 포인트의 이동 거리 계산 (가로 방향만)
+      const deltaX = pos.x - x;
+
       setControlPoints((points) => {
-        // 현재 포인트 찾기
-        const point = points.find((p) => p.id === id);
-
-        if (!point) {
-          return points; // 포인트를 찾지 못하면 기존 배열 반환
-        } else {
-          // 컨트롤 포인트 업데이트
-          const updatedControlPoint = { ...point, ...pos };
-
-          // 꺽임 포인트 연결 정보가 있는 경우 해당 포인트도 함께 업데이트
-          if (point.cornerPoints) {
-            // 이동 거리 계산
-            const deltaX = pos.x - point.x;
-            const deltaY = pos.y - point.y;
-
-            // 각 꺽임 포인트에도 같은 변화량 적용
-            const updatedPoints = points.map((p) => {
-              // 꺽임 포인트 중 하나와 ID가 일치하면 업데이트
-              if (point.cornerPoints?.before && p.id === point.cornerPoints.before.id) {
-                return { ...p, x: p.x + deltaX, y: p.y + deltaY };
-              }
-              if (point.cornerPoints?.after && p.id === point.cornerPoints.after.id) {
-                return { ...p, x: p.x + deltaX, y: p.y + deltaY };
-              }
-              // 현재 컨트롤 포인트 업데이트
-              if (p.id === id) {
-                return updatedControlPoint;
-              }
-              return p;
-            });
-
-            return updatedPoints;
+        // 컨트롤 포인트가 가지고 있는 cornerPoints 정보를 사용하여 연결된 엣지 포인트를 찾음
+        return points.map((p) => {
+          // 현재 컨트롤 포인트 자체는 x, y 모두 업데이트
+          if (p.id === id) {
+            return { ...p, x: pos.x, y: pos.y };
           }
 
-          // 연결 정보가 없는 경우 단순히 컨트롤 포인트만 업데이트
-          const updatedPoints = points.map((p) => (p.id === id ? updatedControlPoint : p));
-          return updatedPoints;
-        }
+          // cornerPoints 객체가 있고, cornerPoints.before 또는 cornerPoints.after의 ID와
+          // 일치하는 엣지 포인트를 찾아 가로 방향으로만 이동
+          if (cornerPoints?.before && p.id === cornerPoints.before.id) {
+            return { ...p, x: p.x + deltaX }; // y값은 유지하고 x만 변경
+          }
+
+          if (cornerPoints?.after && p.id === cornerPoints.after.id) {
+            return { ...p, x: p.x + deltaX }; // y값은 유지하고 x만 변경
+          }
+
+          return p; // 관련 없는 포인트는 변경하지 않음
+        });
       });
     },
-    [id, setControlPoints],
+    [id, x, cornerPoints, setControlPoints],
   );
 
-  // EFFECTS -------------------------------------------------------------------
+  // 컨트롤 포인트 드래그 처리
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.button === 2) return; // 우클릭 무시
 
-  // 드래그 이벤트 처리
-  // 마우스/터치로 포인트를 드래그할 때의 동작 정의
-  useEffect(() => {
-    if (!container || !dragging) return;
+      e.stopPropagation();
 
-    // 포인터 이동 이벤트 핸들러
-    const onPointerMove = (e: PointerEvent) => {
-      updatePosition(screenToFlowPosition({ x: e.clientX, y: e.clientY }));
-    };
+      if (!container) return;
 
-    // 포인터 업 이벤트 핸들러
-    const onPointerUp = (e: PointerEvent) => {
-      container.removeEventListener('pointermove', onPointerMove);
+      // 컨트롤 포인트의 초기 flow 좌표
+      const initialFlowPos = { x, y };
 
-      setDragging(false);
-      updatePosition(screenToFlowPosition({ x: e.clientX, y: e.clientY }));
-    };
+      // 마우스 초기 클라이언트 좌표
+      const initialClientPos = { x: e.clientX, y: e.clientY };
 
-    // 이벤트 리스너 등록
-    container.addEventListener('pointermove', onPointerMove);
-    container.addEventListener('pointerup', onPointerUp, { once: true });
-    container.addEventListener('pointerleave', onPointerUp, { once: true });
+      // 이전 마우스 플로우 위치로 초기화
+      let prevMouseFlowPos = screenToFlowPosition(initialClientPos);
 
-    // 클린업 함수
-    return () => {
-      container.removeEventListener('pointermove', onPointerMove);
-      container.removeEventListener('pointerup', onPointerUp);
-      container.removeEventListener('pointerleave', onPointerUp);
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        moveEvent.preventDefault();
+        const currentMouseFlowPos = screenToFlowPosition({
+          x: moveEvent.clientX,
+          y: moveEvent.clientY,
+        });
+        // 이전 프레임 대비 변화량만 계산
+        const deltaX = currentMouseFlowPos.x - prevMouseFlowPos.x;
+        const deltaY = currentMouseFlowPos.y - prevMouseFlowPos.y;
+        prevMouseFlowPos = currentMouseFlowPos;
 
-      setDragging(false);
-    };
-  }, [id, container, dragging, screenToFlowPosition, setControlPoints, updatePosition]);
+        console.log(`드래그: 변화량(${deltaX.toFixed(2)}, ${deltaY.toFixed(2)})`);
+
+        // 컨트롤 포인트와 엣지 포인트 업데이트
+        setControlPoints((points) => {
+          return points.map((p) => {
+            if (p.id === id) {
+              return { ...p, x: p.x + deltaX, y: p.y + deltaY };
+            }
+
+            if (cornerPoints?.before && p.id === cornerPoints.before.id) {
+              return { ...p, x: p.x + deltaX };
+            }
+
+            if (cornerPoints?.after && p.id === cornerPoints.after.id) {
+              return { ...p, x: p.x + deltaX };
+            }
+
+            return p;
+          });
+        });
+      };
+
+      const handlePointerUp = () => {
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+      };
+
+      document.addEventListener('pointermove', handlePointerMove);
+      document.addEventListener('pointerup', handlePointerUp, { once: true });
+    },
+    [container, cornerPoints?.after, cornerPoints?.before, id, screenToFlowPosition, setControlPoints, x, y],
+  );
 
   // RENDER --------------------------------------------------------------------
 
@@ -151,26 +160,24 @@ export function ControlPoint({
   return (
     <circle
       ref={ref}
-      tabIndex={0} // 키보드 포커스 가능하도록 설정
+      tabIndex={0}
       id={id}
-      cx={x} // 중심 x 좌표
-      cy={y} // 중심 y 좌표
+      cx={x}
+      cy={y}
       r={4}
-      strokeOpacity={1} // 활성 상태에 따른 테두리 투명도
-      stroke={color} // 테두리 색상
-      fill={color} // 활성 상태에 따른 채우기 색상
-      style={{ pointerEvents: 'all' }} // 모든 포인터 이벤트 허용
+      strokeOpacity={dragging ? 1 : 0.3}
+      stroke={color}
+      fill={dragging ? color : 'white'}
+      style={{ pointerEvents: 'all' }}
       onContextMenu={(e) => {
         e.preventDefault();
-        // 우클릭으로 포인트 삭제
+        if (dragging) {
+          setControlPoints((points) => {
+            return points.filter((p) => p.id !== id);
+          });
+        }
       }}
-      onPointerDown={(e) => {
-        if (e.button === 2) return; // 우클릭 무시
-
-        updatePosition({ x, y });
-        setDragging(true);
-      }}
-      onPointerUp={() => setDragging(false)} // 드래그 종료
+      onPointerDown={handlePointerDown}
     />
   );
 }

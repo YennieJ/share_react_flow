@@ -60,7 +60,7 @@ export function EditableEdgeComponent({
   targetY,
   markerEnd,
   markerStart,
-  style,
+  // style,
   data = { points: [] },
 
   ...delegated
@@ -161,11 +161,11 @@ export function EditableEdgeComponent({
         {...delegated}
         markerStart={markerStart}
         markerEnd={markerEnd}
-        style={{
-          ...style,
-          strokeWidth: 2,
-          stroke: color,
-        }}
+        // style={{
+        //   ...style,
+        //   strokeWidth: 2,
+        //   stroke: color,
+        // }}
       />
 
       {/* 컨트롤 포인트 렌더링 */}

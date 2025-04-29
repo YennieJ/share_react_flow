@@ -52,7 +52,7 @@ export const initialEdges: EditableEdge[] = [
     targetHandle: 'left',
     animated: false,
     markerEnd: {
-      type: MarkerType.ArrowClosed,
+      type: MarkerType.Arrow,
       width: 20,
       height: 20,
       color: '#FF0072',

@@ -34,9 +34,12 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
   // 컨트롤 포인트 드래그 처리
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (e.button === 2) return; // 우클릭 무시
       e.stopPropagation();
       if (!container) return;
+
+      if (cornerPoints?.after?.x !== cornerPoints?.before?.x) {
+        return;
+      }
 
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
@@ -95,10 +98,6 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
       stroke={color}
       fill="white"
       style={{ pointerEvents: 'all' }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        setControlPoints((points) => points.filter((p) => p.id !== id));
-      }}
       onPointerDown={handlePointerDown}
     />
   );

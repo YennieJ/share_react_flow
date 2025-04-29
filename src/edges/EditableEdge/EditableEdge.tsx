@@ -170,10 +170,9 @@ export function EditableEdgeComponent({
 
       {/* 컨트롤 포인트 렌더링 */}
       {shouldShowPoints &&
-        controlPointsToRender.map((point, index) => (
+        controlPointsToRender.map((point) => (
           <ControlPoint
             key={point.id}
-            index={index}
             setControlPoints={setControlPoints}
             color={color}
             cornerPoints={point.cornerPoints}

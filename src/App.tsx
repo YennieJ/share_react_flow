@@ -132,6 +132,8 @@ export default function EditableEdgeFlow() {
 
   return (
     <ReactFlow
+      snapToGrid={false}
+      snapGrid={[1, 1]}
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}

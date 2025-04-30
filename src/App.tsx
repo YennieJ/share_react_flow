@@ -11,6 +11,7 @@ import {
   Node,
   Edge,
   Connection,
+  MarkerType,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -39,6 +40,12 @@ export default function EditableEdgeFlow() {
         type: 'editable-edge',
         selected: true,
         reconnectable: true,
+        markerEnd: {
+          type: MarkerType.Arrow,
+          width: 20,
+          height: 20,
+          color: '#FF0072',
+        },
         data: {
           algorithm: DEFAULT_ALGORITHM,
           points: connectionLinePath.map(

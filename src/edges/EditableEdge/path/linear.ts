@@ -16,7 +16,7 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
 
     // y값이 같은 경우 중간 포인트 하나만 생성
     if (start.y === end.y) {
-      pathPoints = [start, { x: middleX, y: start.y }, end];
+      pathPoints = [start, end];
     } else {
       // 기존 로직: 중간 포인트 2개 생성
       const middlePoints = [

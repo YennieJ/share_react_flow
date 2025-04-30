@@ -74,7 +74,7 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
       const controlPointX = (current.x + next.x) / 2;
       const controlPointY = (current.y + next.y) / 2;
 
-      // 컨트롤 포인트 생성 (꺽임 포인트 정보 추가)
+      // 컨트롤 포인트 생성 (2개 이상일 때와 동일한 방식으로 수정)
       const controlPoint: ControlPointData = {
         id: `spline-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
         x: controlPointX,
@@ -83,17 +83,17 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
           before:
             i > 0
               ? {
-                  id: 'id' in pathPoints[i - 1] ? (pathPoints[i - 1] as ControlPointData).id : `generated-${i - 1}`,
-                  x: pathPoints[i - 1].x,
-                  y: pathPoints[i - 1].y,
+                  id: 'id' in pathPoints[i] ? (pathPoints[i] as ControlPointData).id : `point-${i}`,
+                  x: pathPoints[i].x,
+                  y: pathPoints[i].y,
                 }
               : undefined,
           after:
             i < pathPoints.length - 2
               ? {
-                  id: 'id' in pathPoints[i + 2] ? (pathPoints[i + 2] as ControlPointData).id : `generated-${i + 2}`,
-                  x: pathPoints[i + 2].x,
-                  y: pathPoints[i + 2].y,
+                  id: 'id' in pathPoints[i + 1] ? (pathPoints[i + 1] as ControlPointData).id : `point-${i + 1}`,
+                  x: pathPoints[i + 1].x,
+                  y: pathPoints[i + 1].y,
                 }
               : undefined,
         },

@@ -42,42 +42,7 @@ export const edgeTypes = {
 };
 
 // 초기 엣지 목록 포인트 없음
-export const initialEdges: EditableEdge[] = [
-  {
-    id: '3->4',
-    type: 'editable-edge',
-    source: '3',
-    target: '2',
-    sourceHandle: 'right',
-    targetHandle: 'left',
-    animated: false,
-    markerEnd: {
-      type: MarkerType.Arrow,
-      width: 20,
-      height: 20,
-      color: '#FF0072',
-    },
-    style: {
-      strokeWidth: 2,
-      stroke: '#FF0072',
-    },
-    data: {
-      algorithm: Algorithm.Linear,
-      points: [
-        {
-          x: 150.99999809265137,
-          y: 176,
-          id: 'prev',
-        },
-        {
-          x: 150.99999809265137,
-          y: 26,
-          id: 'next',
-        },
-      ],
-    },
-  },
-];
+export const initialEdges: EditableEdge[] = [];
 
 // export const initialEdges: EditableEdge[] = [
 //   {

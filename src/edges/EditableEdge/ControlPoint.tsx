@@ -37,6 +37,7 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
       e.stopPropagation();
       if (!container) return;
 
+      // 수직선만 움직일수 있게 (yennie: 임시)
       if (cornerPoints?.after?.x !== cornerPoints?.before?.x) {
         return;
       }
@@ -57,7 +58,35 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
         prevClientPos = currentClientPos;
 
         setControlPoints((points) => {
-          return points.map((p) => {
+          // 복사본 생성 (필요한 경우 새 포인트 추가를 위해)
+          const updatedPoints = [...points];
+          // yennie: 이거 순서 중요함 먼저 before 처리 후 after 처리
+          // cornerPoints.before ID 확인
+          if (cornerPoints?.before) {
+            const beforePointExists = points.some((p) => p.id === cornerPoints.before?.id);
+            if (!beforePointExists && cornerPoints.before.id) {
+              updatedPoints.push({
+                id: cornerPoints.before.id,
+                x: cornerPoints.before.x,
+                y: cornerPoints.before.y,
+              });
+            }
+          }
+
+          // cornerPoints.after ID 확인
+          if (cornerPoints?.after) {
+            const afterPointExists = points.some((p) => p.id === cornerPoints.after?.id);
+            if (!afterPointExists && cornerPoints.after.id) {
+              updatedPoints.push({
+                id: cornerPoints.after.id,
+                x: cornerPoints.after.x,
+                y: cornerPoints.after.y,
+              });
+            }
+          }
+
+          // 모든 포인트 업데이트
+          return updatedPoints.map((p) => {
             if (p.id === id) {
               return { ...p, x: p.x + deltaX, y: p.y + deltaY };
             }

@@ -112,7 +112,7 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
       document.addEventListener('pointermove', handlePointerMove);
       document.addEventListener('pointerup', handlePointerUp, { once: true });
     },
-    [container, cornerPoints, id, screenToFlowPosition, setControlPoints],
+    [container, cornerPoints?.after, cornerPoints?.before, id, screenToFlowPosition, setControlPoints],
   );
 
   return (

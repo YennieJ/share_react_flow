@@ -12,15 +12,19 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
   // 포인트가 2개인 경우 (소스노드와 타겟노드만 있는 경우)
   if (points.length === 2) {
     const [start, end] = points;
-    // 중간 포인트 계산 (ConnectionLine 방식과 동일)
     const middleX = (start.x + end.x) / 2;
-    const middlePoints = [
-      { x: middleX, y: start.y },
-      { x: middleX, y: end.y },
-    ];
 
-    // 전체 포인트 배열 재구성
-    pathPoints = [start, ...middlePoints, end];
+    // y값이 같은 경우 중간 포인트 하나만 생성
+    if (start.y === end.y) {
+      pathPoints = [start, { x: middleX, y: start.y }, end];
+    } else {
+      // 기존 로직: 중간 포인트 2개 생성
+      const middlePoints = [
+        { x: middleX, y: start.y },
+        { x: middleX, y: end.y },
+      ];
+      pathPoints = [start, ...middlePoints, end];
+    }
   } else {
     pathPoints = [...points];
   }
@@ -57,12 +61,28 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
   if (points.length === 2) {
     const [start, end] = points;
     const middleX = (start.x + end.x) / 2;
+
+    // y값이 같은 경우 가로선이므로 컨트롤 포인트 하나만 생성
+    if (start.y === end.y) {
+      const controlPoint: ControlPointData = {
+        id: `spline-0-${window.crypto.randomUUID().substring(0, 8)}`,
+        x: middleX,
+        y: start.y,
+        cornerPoints: {
+          before: undefined,
+          after: undefined,
+        },
+      };
+
+      controlPoints.push(controlPoint);
+      return controlPoints;
+    }
+
+    // 아래는 기존 로직: y값이 다른 경우 중간 포인트 2개 생성
     const middlePoints = [
       { x: middleX, y: start.y, id: `corner-0-${window.crypto.randomUUID().substring(0, 8)}` },
       { x: middleX, y: end.y, id: `corner-1-${window.crypto.randomUUID().substring(0, 8)}` },
     ];
-
-    // 전체 경로 포인트
     pathPoints = [start, ...middlePoints, end];
 
     // 각 선분마다 컨트롤 포인트 생성

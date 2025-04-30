@@ -42,6 +42,17 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
         return;
       }
 
+      console.log('컨트롤 포인트 정보:', {
+        id,
+        position: { x, y },
+        cornerPoints,
+        event: {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          button: e.button,
+          type: e.type,
+        },
+      });
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
 

@@ -5,9 +5,12 @@ import {
   ConnectionMode,
   OnConnect,
   addEdge,
+  reconnectEdge,
   useEdgesState,
   useNodesState,
   Node,
+  Edge,
+  Connection,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -35,6 +38,7 @@ export default function EditableEdgeFlow() {
         id: `${Date.now()}-${connection.source}-${connection.target}`,
         type: 'editable-edge',
         selected: true,
+        reconnectable: true,
         data: {
           algorithm: DEFAULT_ALGORITHM,
           points: connectionLinePath.map(
@@ -130,6 +134,30 @@ export default function EditableEdgeFlow() {
     [edges, setEdges],
   );
 
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      setEdges((els) => {
+        // 기존 엣지 데이터 보존
+        const edge = reconnectEdge(oldEdge, newConnection, els);
+
+        // EditableEdge 타입으로 변환하여 기존 데이터 유지
+        return edge.map((e) => {
+          if (e.id === oldEdge.id) {
+            return {
+              ...e,
+              data: {
+                ...oldEdge.data, // 기존 데이터 보존
+                ...e.data, // 새 데이터 병합
+              },
+            } as EditableEdge;
+          }
+          return e as EditableEdge;
+        });
+      });
+    },
+    [setEdges],
+  );
+
   return (
     <ReactFlow
       snapToGrid={false}
@@ -140,6 +168,7 @@ export default function EditableEdgeFlow() {
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeDrag={onNodeDrag}
+      onReconnect={onReconnect}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       connectionMode={ConnectionMode.Loose}

@@ -95,11 +95,6 @@ export function EditableEdgeComponent({
           // 기존 points 배열에서 업데이트만 적용
           const updatedPoints = update(e.data?.points ?? []);
 
-          // 점 개수가 늘어난 경우 체크
-          if (updatedPoints.length > (e.data?.points?.length ?? 0)) {
-            console.log('경고: 컨트롤 포인트 개수가 증가했습니다!');
-          }
-
           const data = { ...e.data, points: updatedPoints };
           return { ...e, data };
         }),

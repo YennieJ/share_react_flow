@@ -24,6 +24,11 @@ import { DEFAULT_ALGORITHM } from './edges/EditableEdge/constants';
 
 const fitViewOptions = { padding: 0.4 };
 
+// 같은 노드로의 연결을 금지하는 유효성 검사 함수 수정
+const isValidConnection = (connection: Connection | EditableEdge) => {
+  return connection.source !== connection.target;
+};
+
 // 노드 클릭시 포인트 위치 변경 수정
 export default function EditableEdgeFlow() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
@@ -40,12 +45,7 @@ export default function EditableEdgeFlow() {
         type: 'editable-edge',
         selected: true,
         reconnectable: true,
-        markerEnd: {
-          type: MarkerType.Arrow,
-          width: 20,
-          height: 20,
-          color: '#FF0072',
-        },
+
         data: {
           algorithm: DEFAULT_ALGORITHM,
           points: connectionLinePath.map(
@@ -167,6 +167,15 @@ export default function EditableEdgeFlow() {
 
   return (
     <ReactFlow
+      defaultEdgeOptions={{
+        markerEnd: {
+          type: MarkerType.Arrow,
+          width: 20,
+          height: 20,
+          color: '#FF0072',
+        },
+      }}
+      className="validationflow"
       snapToGrid={false}
       snapGrid={[1, 1]}
       nodes={nodes}
@@ -180,6 +189,7 @@ export default function EditableEdgeFlow() {
       edgeTypes={edgeTypes}
       connectionMode={ConnectionMode.Loose}
       connectionLineComponent={ConnectionLine}
+      isValidConnection={isValidConnection}
       fitView
       fitViewOptions={fitViewOptions}
     >

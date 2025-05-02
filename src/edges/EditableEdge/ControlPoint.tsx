@@ -18,7 +18,7 @@ export type ControlPointProps = {
   x: number;
   y: number;
   color: string;
-  setControlPoints: (update: (points: ControlPointData[]) => ControlPointData[]) => void;
+  setEdgeLinePoints: (update: (points: ControlPointData[]) => ControlPointData[]) => void;
   cornerPoints?: {
     before?: { id: string; x: number; y: number };
     after?: { id: string; x: number; y: number };
@@ -26,7 +26,7 @@ export type ControlPointProps = {
 };
 
 // 컨트롤 포인트 컴포넌트
-export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }: ControlPointProps) {
+export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints }: ControlPointProps) {
   const container = useStore((store) => store.domNode);
   const { screenToFlowPosition } = useReactFlow();
   const ref = useRef<SVGCircleElement>(null);
@@ -68,7 +68,7 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
 
         prevClientPos = currentClientPos;
 
-        setControlPoints((points) => {
+        setEdgeLinePoints((points) => {
           // 복사본 생성 (필요한 경우 새 포인트 추가를 위해)
           const updatedPoints = [...points];
           // yennie: 이거 순서 중요함 먼저 before 처리 후 after 처리
@@ -123,7 +123,7 @@ export function ControlPoint({ id, x, y, setControlPoints, color, cornerPoints }
       document.addEventListener('pointermove', handlePointerMove);
       document.addEventListener('pointerup', handlePointerUp, { once: true });
     },
-    [container, cornerPoints?.after, cornerPoints?.before, id, screenToFlowPosition, setControlPoints],
+    [container, cornerPoints, id, screenToFlowPosition, setEdgeLinePoints, x, y],
   );
 
   return (

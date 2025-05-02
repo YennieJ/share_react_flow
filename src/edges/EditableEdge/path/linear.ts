@@ -9,7 +9,7 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
 
   let pathPoints: XYPosition[] = [];
 
-  // 포인트가 2개인 경우 (소스노드와 타겟노드만 있는 경우)
+  // 포인트가 2개인 경우 (소스노드와 타겟노드만 있는 경우 기존 호환성을 위한 처리)
   if (points.length === 2) {
     const [start, end] = points;
     const middleX = (start.x + end.x) / 2;
@@ -26,7 +26,12 @@ export function getLinearPath(points: (ControlPointData | XYPosition)[]) {
       pathPoints = [start, ...middlePoints, end];
     }
   } else {
-    pathPoints = [...points];
+    // 포인트 그대로 사용하되, 복사본 생성
+    const start = points[0];
+    const end = points[points.length - 1];
+    const middlePoints = points.slice(1, points.length - 1); // 첫번째와 마지막 제외
+
+    pathPoints = [start, ...middlePoints, end];
   }
 
   // SVG 경로 시작점 설정

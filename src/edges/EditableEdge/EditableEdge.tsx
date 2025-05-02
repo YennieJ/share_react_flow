@@ -60,9 +60,7 @@ export function EditableEdgeComponent({
   targetY,
   markerEnd,
   markerStart,
-  // style,
   data = { points: [] },
-
   ...delegated
 }: EdgeProps<EditableEdge>) {
   // 소스와 타겟 노드의 위치 정보
@@ -85,7 +83,7 @@ export function EditableEdgeComponent({
   });
 
   // 컨트롤 포인트 업데이트 핸들러
-  const setControlPoints = useCallback(
+  const setEdgeLinePoints = useCallback(
     (update: (points: ControlPointData[]) => ControlPointData[]) => {
       setEdges((edges) =>
         edges.map((e) => {
@@ -168,7 +166,7 @@ export function EditableEdgeComponent({
         controlPointsToRender.map((point) => (
           <ControlPoint
             key={point.id}
-            setControlPoints={setControlPoints}
+            setEdgeLinePoints={setEdgeLinePoints}
             color={color}
             cornerPoints={point.cornerPoints}
             {...point}

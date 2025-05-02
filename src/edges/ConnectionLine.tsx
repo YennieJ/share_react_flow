@@ -1,11 +1,15 @@
 import { type ConnectionLineComponentProps } from '@xyflow/react';
+import { useEffect, useMemo } from 'react';
 
 import { getPath } from './EditableEdge';
 import { COLORS, DEFAULT_ALGORITHM } from './EditableEdge/constants';
-
+import { useAppStore } from '../store';
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시
 export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: ConnectionLineComponentProps) {
+  // useAppStore 훅을 사용하여 상태 접근
+  const setConnectionLinePath = useAppStore((state) => state.setConnectionLinePath);
+
   // 연결 포인트 계산
   const calculateOrthogonalPoints = () => {
     const offsetX = 10; // X축으로 10px 떨어진 거리
@@ -33,18 +37,24 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
 
     // 타겟 노드가 시작 노드의 오른쪽에 있는 경우 (오른쪽으로 드래그)
     if (toX > fromX) {
-      // target -- source
+      // source -- target
+      if (fromY === toY) {
+        return [];
+      }
+      //     source--
+      //            |
+      // target ----
       if (toNode && toPosition === 'right') {
         return [
           { x: fromX + offsetX, y: fromY },
           { x: toX + offsetX, y: toY },
         ];
       }
-
       //           -- target
       //          |
       // source --
       const middleX = (fromX + toX) / 2;
+
       return [
         { x: middleX, y: fromY },
         { x: middleX, y: toY },
@@ -100,7 +110,14 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
   const orthogonalPoints = calculateOrthogonalPoints();
 
   // 시작점, 중간점들, 끝점을 포함한 전체 경로 포인트
-  const allPoints = [{ x: fromX, y: fromY }, ...orthogonalPoints, { x: toX, y: toY }];
+  const allPoints = useMemo(() => {
+    return [{ x: fromX, y: fromY }, ...orthogonalPoints, { x: toX, y: toY }];
+  }, [fromX, fromY, toX, toY, orthogonalPoints]);
+
+  // 전역 스토어에 경로 저장
+  useEffect(() => {
+    setConnectionLinePath(allPoints);
+  }, [allPoints, setConnectionLinePath]);
 
   // 경로 생성
   const path = getPath(allPoints, DEFAULT_ALGORITHM);

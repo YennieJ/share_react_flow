@@ -34,9 +34,13 @@ export default function EditableEdgeFlow() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
 
+  // console.log(edges);
+
   const onConnect: OnConnect = useCallback(
     (connection) => {
       const { connectionLinePath } = useAppStore.getState();
+      const middlePoints = connectionLinePath.slice(1, -1);
+
       // 선택된 기본 알고리즘을 기반으로 새 엣지 생성
       // 연결 생성 중 사용자가 추가한 모든 컨트롤 포인트를 전송
       const edge: EditableEdge = {
@@ -48,12 +52,11 @@ export default function EditableEdgeFlow() {
 
         data: {
           algorithm: DEFAULT_ALGORITHM,
-          points: connectionLinePath.map(
-            (point, i) =>
+          points: middlePoints.map(
+            (point) =>
               ({
                 ...point,
                 id: window.crypto.randomUUID(),
-                prev: i === 0 ? undefined : connectionLinePath[i - 1],
               } as ControlPointData),
           ),
         },

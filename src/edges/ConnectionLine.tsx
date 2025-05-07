@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { getPath } from './EditableEdge';
 import { COLORS, DEFAULT_ALGORITHM } from './EditableEdge/constants';
 import { useAppStore } from '../store';
+import CustomArrow from './CustomArrow';
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시
 export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: ConnectionLineComponentProps) {
@@ -130,7 +131,10 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
   // SVG 경로 렌더링
   return (
     <g>
-      <path fill="none" stroke={COLORS[DEFAULT_ALGORITHM]} d={path} />
+      <defs>
+        <CustomArrow id="connection-line-arrow" color={COLORS[DEFAULT_ALGORITHM]} strokeWidth={2} />
+      </defs>
+      <path fill="none" stroke={COLORS[DEFAULT_ALGORITHM]} d={path} markerEnd="url(#connection-line-arrow)" />
     </g>
   );
 }

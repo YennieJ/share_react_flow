@@ -11,7 +11,6 @@ import {
   Node,
   Edge,
   Connection,
-  MarkerType,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -180,14 +179,14 @@ export default function EditableEdgeFlow() {
 
   return (
     <ReactFlow
-      defaultEdgeOptions={{
-        markerEnd: {
-          type: MarkerType.Arrow,
-          width: 20,
-          height: 20,
-          color: '#FF0072',
-        },
-      }}
+      // defaultEdgeOptions={{
+      //   markerEnd: {
+      //     type: MarkerType.Arrow,
+      //     width: 20,
+      //     height: 20,
+      //     color: '#FF0072',
+      //   },
+      // }}
       className="validationflow"
       snapToGrid={false}
       snapGrid={[1, 1]}

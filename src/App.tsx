@@ -146,18 +146,28 @@ export default function EditableEdgeFlow() {
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      setEdges((els) => {
-        // 기존 엣지 데이터 보존
-        const edge = reconnectEdge(oldEdge, newConnection, els);
+      const { connectionLinePath } = useAppStore.getState();
+      const middlePoints = connectionLinePath.slice(1, -1);
 
-        // EditableEdge 타입으로 변환하여 기존 데이터 유지
-        return edge.map((e) => {
-          if (e.id === oldEdge.id) {
+      setEdges((els) => {
+        // 기존 엣지 데이터와 새 연결 정보 결합
+        const reconnectedEdges = reconnectEdge(oldEdge, newConnection, els);
+
+        // 새로 생성된 엣지 찾기 (일반적으로 새 연결 정보와 소스/타겟이 일치하는 엣지)
+        return reconnectedEdges.map((e) => {
+          // 새로 생성된 엣지 (소스와 타겟이 newConnection과 일치)
+          if (e.source === newConnection.source && e.target === newConnection.target) {
             return {
               ...e,
               data: {
                 ...oldEdge.data, // 기존 데이터 보존
-                ...e.data, // 새 데이터 병합
+                points: middlePoints.map(
+                  (point) =>
+                    ({
+                      ...point,
+                      id: window.crypto.randomUUID(),
+                    } as ControlPointData),
+                ),
               },
             } as EditableEdge;
           }

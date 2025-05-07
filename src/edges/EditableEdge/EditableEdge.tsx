@@ -82,7 +82,7 @@ export function EditableEdgeComponent({
     return selected || sourceNode.selected || targetNode.selected;
   });
 
-  // 컨트롤 포인트 업데이트 핸들러
+  // 컨트롤 포인트를 사용해서, 엣지 라인 포인트 업데이트
   const setEdgeLinePoints = useCallback(
     (update: (points: ControlPointData[]) => ControlPointData[]) => {
       setEdges((edges) =>

@@ -27,6 +27,7 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
       //          |
       // source --
       if (toPosition === 'right') {
+        // console.log('1');
         const points = [
           { x: fromX + offsetX, y: fromY },
           { x: fromX + offsetX, y: toY },
@@ -39,12 +40,14 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
     if (toX > fromX) {
       // source -- target
       if (fromY === toY) {
+        // console.log('2');
         return [];
       }
       //     source--
       //            |
       // target ----
       if (toNode && toPosition === 'right') {
+        // console.log('3');
         return [
           { x: fromX + offsetX, y: fromY },
           { x: toX + offsetX, y: toY },
@@ -68,6 +71,7 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
       //             |
       //    source --
       if (toNode && toPosition === 'left') {
+        // console.log('4');
         const points = [
           { x: fromX + offsetX, y: fromY },
           { x: fromX + offsetX, y: middleY },
@@ -82,6 +86,7 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
       //             |
       //    source --
       else if (toNode && toPosition === 'right') {
+        // console.log('5');
         const points = [
           { x: fromX + offsetX, y: fromY },
           { x: fromX + offsetX, y: middleY },

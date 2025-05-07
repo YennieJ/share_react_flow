@@ -49,7 +49,7 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
       if (toNode && toPosition === 'right') {
         // console.log('3');
         return [
-          { x: fromX + offsetX, y: fromY },
+          { x: toX + offsetX, y: fromY },
           { x: toX + offsetX, y: toY },
         ];
       }
@@ -75,7 +75,7 @@ export function ConnectionLine({ fromX, fromY, toX, toY, toPosition, toNode }: C
         const points = [
           { x: fromX + offsetX, y: fromY },
           { x: fromX + offsetX, y: middleY },
-          { x: toX, y: middleY },
+          { x: toX - offsetX, y: middleY },
           { x: toX - offsetX, y: toY },
         ];
         return points;

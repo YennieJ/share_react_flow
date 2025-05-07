@@ -12,7 +12,6 @@ import {
 import { ControlPoint, type ControlPointData } from './ControlPoint';
 import { getPath, getControlPoints } from './path';
 import { Algorithm, COLORS } from './constants';
-import CustomArrow from '../CustomArrow';
 
 // 비활성 컨트롤 포인트에 대한 ID를 관리하는 커스텀 훅
 // 포인트 배열의 길이가 변경되지 않는 한 동일한 ID를 유지
@@ -59,6 +58,7 @@ export function EditableEdgeComponent({
   target,
   targetX,
   targetY,
+  markerEnd,
   data = { points: [] },
   ...delegated
 }: EdgeProps<EditableEdge>) {
@@ -146,15 +146,12 @@ export function EditableEdgeComponent({
 
   return (
     <>
-      <defs>
-        <CustomArrow id={id} color={color} strokeWidth={2} />
-      </defs>
       {/* 기본 엣지 렌더링 */}
       <BaseEdge
         id={id}
         path={path}
         {...delegated}
-        markerEnd={`url(#${id})`}
+        markerEnd={markerEnd}
         style={{
           stroke: color,
         }}

@@ -10,10 +10,23 @@ body,
   height: 100%;
   margin: 0;
 }
+
+/* 엣지 연결 커서 변경 */
+.react-flow__connection,
+.react-flow__connection-path,
+.react-flow__connectionline,
+svg.react-flow__connectionline {
+  cursor: crosshair !important;
+  pointer-events: all !important;
+}
+
+/* 노드 왼쪽 핸들러 연결 불가능 */
 .validationflow .react-flow__handle.connectingto {
   background: #ff6060;
 }
 
+/* 노드 핸들러 연결 가능 */
 .validationflow .react-flow__handle.valid {
   background: #55dd99;
+  /* cursor: crosshair !important; */
 }

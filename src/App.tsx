@@ -33,7 +33,6 @@ const isValidConnection = (connection: Connection | EditableEdge) => {
 export default function EditableEdgeFlow() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
-
   // console.log(edges);
 
   const onConnect: OnConnect = useCallback(
@@ -146,8 +145,13 @@ export default function EditableEdgeFlow() {
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      const { connectionLinePath } = useAppStore.getState();
-      const middlePoints = connectionLinePath.slice(1, -1);
+      const { connectionLinePath, isReconnectionFromSource } = useAppStore.getState();
+      let middlePoints = connectionLinePath.slice(1, -1);
+
+      // 타겟 핸들에서 리커넥트하는 경우 미들 포인트 순서 반대로 설정
+      if (isReconnectionFromSource) {
+        middlePoints = middlePoints.reverse();
+      }
 
       setEdges((els) => {
         // 기존 엣지 데이터와 새 연결 정보 결합
@@ -177,9 +181,18 @@ export default function EditableEdgeFlow() {
     },
     [setEdges],
   );
+  const { setIsReconnectionFrommSource } = useAppStore();
 
   return (
     <ReactFlow
+      onReconnectStart={(event, edge, handleType) => {
+        // 현재 재연결 중인 핸들 타입 저장
+        setIsReconnectionFrommSource(handleType === 'target');
+      }}
+      onReconnectEnd={() => {
+        // 재연결 작업 종료 시 핸들 타입 상태 재설정
+        setIsReconnectionFrommSource(null);
+      }}
       defaultEdgeOptions={{
         markerEnd: {
           type: MarkerType.Arrow,

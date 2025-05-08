@@ -1,4 +1,4 @@
-import { MarkerType, Node } from '@xyflow/react';
+import { Node } from '@xyflow/react';
 
 import { EditableEdge, EditableEdgeComponent } from './edges/EditableEdge';
 import { CustomNode } from './nodes/CustomNode';
@@ -42,7 +42,21 @@ export const edgeTypes = {
 };
 
 // 초기 엣지 목록 포인트 없음
-export const initialEdges: EditableEdge[] = [];
+export const initialEdges: EditableEdge[] = [
+  {
+    id: '3->4',
+    type: 'editable-edge',
+    source: '3',
+    target: '2',
+    sourceHandle: 'right',
+    targetHandle: 'left',
+    animated: false,
+    data: {
+      algorithm: Algorithm.Linear,
+      points: [],
+    },
+  },
+];
 
 // export const initialEdges: EditableEdge[] = [
 //   {

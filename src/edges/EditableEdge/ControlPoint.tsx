@@ -49,13 +49,12 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
         },
       });
 
-      // 수직선만 움직일수 있게 (yennie: 임시)
-      if (cornerPoints?.after?.x !== cornerPoints?.before?.x) {
-        return;
-      }
-
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
+
+      // 엣지 방향에 따른 분기 플래그
+      const isHorizontal =
+        !!(cornerPoints?.after && cornerPoints.before) && cornerPoints.after.x !== cornerPoints.before.x;
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
         moveEvent.preventDefault();
@@ -66,49 +65,37 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
 
         const deltaX = currentFlow.x - prevFlow.x;
         const deltaY = currentFlow.y - prevFlow.y;
-
         prevClientPos = currentClientPos;
 
         setEdgeLinePoints((points) => {
-          // 복사본 생성 (필요한 경우 새 포인트 추가를 위해)
           const updatedPoints = [...points];
-          // yennie: 이거 순서 중요함 먼저 before 처리 후 after 처리
-          // cornerPoints.before ID 확인
+
+          // before/after 핸들 존재 시 추가
           if (cornerPoints?.before) {
-            const beforePointExists = points.some((p) => p.id === cornerPoints.before?.id);
-            if (!beforePointExists && cornerPoints.before.id) {
-              updatedPoints.push({
-                id: cornerPoints.before.id,
-                x: cornerPoints.before.x,
-                y: cornerPoints.before.y,
-              });
-            }
+            const exists = updatedPoints.some((p) => p.id === cornerPoints.before!.id);
+            if (!exists) updatedPoints.push({ ...cornerPoints.before! });
           }
-
-          // cornerPoints.after ID 확인
           if (cornerPoints?.after) {
-            const afterPointExists = points.some((p) => p.id === cornerPoints.after?.id);
-            if (!afterPointExists && cornerPoints.after.id) {
-              updatedPoints.push({
-                id: cornerPoints.after.id,
-                x: cornerPoints.after.x,
-                y: cornerPoints.after.y,
-              });
-            }
+            const exists = updatedPoints.some((p) => p.id === cornerPoints.after!.id);
+            if (!exists) updatedPoints.push({ ...cornerPoints.after! });
           }
 
-          // 모든 포인트 업데이트
           return updatedPoints.map((point) => {
+            // 메인 드래그 포인트
             if (point.id === id) {
-              return { ...point, x: point.x + deltaX, y: point.y + deltaY };
+              return isHorizontal
+                ? { ...point, y: point.y + deltaY } // 가로선 → Y만
+                : { ...point, x: point.x + deltaX }; // 세로선 → X만
             }
 
+            // before 핸들
             if (cornerPoints?.before && point.id === cornerPoints.before.id) {
-              return { ...point, x: point.x + deltaX };
+              return isHorizontal ? { ...point, y: point.y + deltaY } : { ...point, x: point.x + deltaX };
             }
 
+            // after 핸들
             if (cornerPoints?.after && point.id === cornerPoints.after.id) {
-              return { ...point, x: point.x + deltaX };
+              return isHorizontal ? { ...point, y: point.y + deltaY } : { ...point, x: point.x + deltaX };
             }
 
             return point;

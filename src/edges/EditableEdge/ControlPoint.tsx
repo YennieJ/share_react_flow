@@ -1,29 +1,29 @@
 import type { XYPosition } from '@xyflow/react';
 import { useCallback, useRef } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
+import { LinePointData } from './path/linear';
 
 // 컨트롤 포인트의 데이터 타입 정의
 export type ControlPointData = XYPosition & {
   id: string;
-  prev?: string;
-  cornerPoints?: {
+  cornerPoints: {
     before?: XYPosition & { id: string };
     after?: XYPosition & { id: string };
   };
 };
 
 // 컨트롤 포인트 컴포넌트의 props 타입 정의
-export type ControlPointProps = {
+interface ControlPointProps {
   id: string;
   x: number;
   y: number;
   color: string;
-  setEdgeLinePoints: (update: (points: ControlPointData[]) => ControlPointData[]) => void;
-  cornerPoints?: {
+  setEdgeLinePoints: (update: (points: LinePointData[]) => LinePointData[]) => void;
+  cornerPoints: {
     before?: { id: string; x: number; y: number };
     after?: { id: string; x: number; y: number };
   };
-};
+}
 
 // 컨트롤 포인트 컴포넌트
 export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints }: ControlPointProps) {
@@ -37,11 +37,6 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
       e.stopPropagation();
       if (!container) return;
 
-      // 수직선만 움직일수 있게 (yennie: 임시)
-      if (cornerPoints?.after?.x !== cornerPoints?.before?.x) {
-        return;
-      }
-
       console.log('컨트롤 포인트 정보:', {
         id,
         position: { x, y },
@@ -53,6 +48,12 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
           type: e.type,
         },
       });
+
+      // 수직선만 움직일수 있게 (yennie: 임시)
+      if (cornerPoints?.after?.x !== cornerPoints?.before?.x) {
+        return;
+      }
+
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
 
@@ -97,20 +98,20 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
           }
 
           // 모든 포인트 업데이트
-          return updatedPoints.map((p) => {
-            if (p.id === id) {
-              return { ...p, x: p.x + deltaX, y: p.y + deltaY };
+          return updatedPoints.map((point) => {
+            if (point.id === id) {
+              return { ...point, x: point.x + deltaX, y: point.y + deltaY };
             }
 
-            if (cornerPoints?.before && p.id === cornerPoints.before.id) {
-              return { ...p, x: p.x + deltaX };
+            if (cornerPoints?.before && point.id === cornerPoints.before.id) {
+              return { ...point, x: point.x + deltaX };
             }
 
-            if (cornerPoints?.after && p.id === cornerPoints.after.id) {
-              return { ...p, x: p.x + deltaX };
+            if (cornerPoints?.after && point.id === cornerPoints.after.id) {
+              return { ...point, x: point.x + deltaX };
             }
 
-            return p;
+            return point;
           });
         });
       };

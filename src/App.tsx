@@ -35,36 +35,6 @@ export default function EditableEdgeFlow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
   // console.log(edges);
 
-  const onConnect: OnConnect = useCallback(
-    (connection) => {
-      const { connectionLinePath } = useAppStore.getState();
-      const middlePoints = connectionLinePath.slice(1, -1);
-
-      // 선택된 기본 알고리즘을 기반으로 새 엣지 생성
-      // 연결 생성 중 사용자가 추가한 모든 컨트롤 포인트를 전송
-      const edge: EditableEdge = {
-        ...connection,
-        id: `${Date.now()}-${connection.source}-${connection.target}`,
-        type: 'editable-edge',
-        selected: true,
-        reconnectable: true,
-
-        data: {
-          algorithm: DEFAULT_ALGORITHM,
-          points: middlePoints.map(
-            (point) =>
-              ({
-                ...point,
-                id: window.crypto.randomUUID(),
-              } as ControlPointData),
-          ),
-        },
-      };
-      setEdges((edges) => addEdge(edge, edges));
-    },
-    [setEdges],
-  );
-
   const onNodeDrag = useCallback(
     (_, node: Node) => {
       // 드래그 중인 노드 ID 가져오기
@@ -143,14 +113,44 @@ export default function EditableEdgeFlow() {
     [edges, setEdges],
   );
 
+  const onConnect: OnConnect = useCallback(
+    (connection) => {
+      const { connectionLinePath } = useAppStore.getState();
+      const cornerPoints = connectionLinePath.slice(1, -1);
+
+      // 선택된 기본 알고리즘을 기반으로 새 엣지 생성
+      // 연결 생성 중 사용자가 추가한 모든 컨트롤 포인트를 전송
+      const edge: EditableEdge = {
+        ...connection,
+        id: `${Date.now()}-${connection.source}-${connection.target}`,
+        type: 'editable-edge',
+        selected: true,
+        reconnectable: true,
+
+        data: {
+          algorithm: DEFAULT_ALGORITHM,
+          points: cornerPoints.map(
+            (point, index) =>
+              ({
+                ...point,
+                id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
+              } as ControlPointData),
+          ),
+        },
+      };
+      setEdges((edges) => addEdge(edge, edges));
+    },
+    [setEdges],
+  );
+
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
       const { connectionLinePath, isReconnectionFromSource } = useAppStore.getState();
-      let middlePoints = connectionLinePath.slice(1, -1);
+      let cornerPoints = connectionLinePath.slice(1, -1);
 
       // 타겟 핸들에서 리커넥트하는 경우 미들 포인트 순서 반대로 설정
       if (isReconnectionFromSource) {
-        middlePoints = middlePoints.reverse();
+        cornerPoints = cornerPoints.reverse();
       }
 
       setEdges((els) => {
@@ -165,11 +165,11 @@ export default function EditableEdgeFlow() {
               ...e,
               data: {
                 ...oldEdge.data, // 기존 데이터 보존
-                points: middlePoints.map(
-                  (point) =>
+                points: cornerPoints.map(
+                  (point, index) =>
                     ({
                       ...point,
-                      id: window.crypto.randomUUID(),
+                      id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
                     } as ControlPointData),
                 ),
               },

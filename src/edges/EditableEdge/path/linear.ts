@@ -67,19 +67,8 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
     const [start, end] = points;
     const middleX = (start.x + end.x) / 2;
 
-    // y값이 같은 경우 가로선이므로 컨트롤 포인트 하나만 생성
+    // y값이 같은 경우 가로선이므로 컨트롤 포인트 없음
     if (start.y === end.y) {
-      const controlPoint: ControlPointData = {
-        id: `spline-0-${window.crypto.randomUUID().substring(0, 8)}`,
-        x: middleX,
-        y: start.y,
-        cornerPoints: {
-          before: undefined,
-          after: undefined,
-        },
-      };
-
-      controlPoints.push(controlPoint);
       return controlPoints;
     }
 
@@ -90,8 +79,8 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
     ];
     pathPoints = [start, ...middlePoints, end];
 
-    // 각 선분마다 컨트롤 포인트 생성
-    for (let i = 0; i < pathPoints.length - 1; i++) {
+    // 처음과 마지막 선분을 제외한 선분에만 컨트롤 포인트 생성
+    for (let i = 1; i < pathPoints.length - 2; i++) {
       const current = pathPoints[i];
       const next = pathPoints[i + 1];
 
@@ -101,14 +90,14 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
 
       // 컨트롤 포인트 생성 (2개 이상일 때와 동일한 방식으로 수정)
       const controlPoint: ControlPointData = {
-        id: `spline-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+        id: `control-point-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
         x: controlPointX,
         y: controlPointY,
         cornerPoints: {
           before:
             i > 0
               ? {
-                  id: 'id' in pathPoints[i] ? (pathPoints[i] as ControlPointData).id : `point-${i}`,
+                  id: (pathPoints[i] as ControlPointData).id,
                   x: pathPoints[i].x,
                   y: pathPoints[i].y,
                 }
@@ -116,7 +105,7 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
           after:
             i < pathPoints.length - 2
               ? {
-                  id: 'id' in pathPoints[i + 1] ? (pathPoints[i + 1] as ControlPointData).id : `point-${i + 1}`,
+                  id: (pathPoints[i + 1] as ControlPointData).id,
                   x: pathPoints[i + 1].x,
                   y: pathPoints[i + 1].y,
                 }
@@ -128,7 +117,7 @@ export function getLinearControlPoints(points: (ControlPointData | XYPosition)[]
     }
   } else if (points.length > 2) {
     // 3개 이상의 포인트가 이미 있는 경우, 각 인접 포인트 사이에 컨트롤 포인트 생성
-    for (let i = 0; i < points.length - 1; i++) {
+    for (let i = 1; i < points.length - 2; i++) {
       const current = points[i];
       const next = points[i + 1];
 

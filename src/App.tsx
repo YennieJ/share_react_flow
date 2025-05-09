@@ -11,7 +11,6 @@ import {
   Node,
   Edge,
   Connection,
-  MarkerType,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -20,7 +19,7 @@ import { initialNodes, nodeTypes, initialEdges, edgeTypes } from './initialEleme
 import { useAppStore } from './store';
 import { ControlPointData, EditableEdge } from './edges/EditableEdge';
 import { ConnectionLine } from './edges/ConnectionLine';
-import { DEFAULT_ALGORITHM } from './edges/EditableEdge/constants';
+import { DEFAULT_ALGORITHM, ProgressEdgeType } from './edges/EditableEdge/constants';
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -136,6 +135,7 @@ export default function EditableEdgeFlow() {
                 id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
               } as ControlPointData),
           ),
+          type: ProgressEdgeType.YES,
         },
       };
       setEdges((edges) => addEdge(edge, edges));
@@ -172,6 +172,7 @@ export default function EditableEdgeFlow() {
                       id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
                     } as ControlPointData),
                 ),
+                type: oldEdge.data?.type as ProgressEdgeType,
               },
             } as EditableEdge;
           }
@@ -192,14 +193,6 @@ export default function EditableEdgeFlow() {
       onReconnectEnd={() => {
         // 재연결 작업 종료 시 핸들 타입 상태 재설정
         setIsReconnectionFrommSource(null);
-      }}
-      defaultEdgeOptions={{
-        markerEnd: {
-          type: MarkerType.Arrow,
-          width: 20,
-          height: 20,
-          color: '#0375ff',
-        },
       }}
       className="validationflow"
       snapToGrid={false}

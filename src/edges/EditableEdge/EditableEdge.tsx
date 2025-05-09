@@ -11,15 +11,17 @@ import {
 
 import { ControlPoint } from './ControlPoint';
 import { getPath, getControlPoints } from './path';
-import { Algorithm, COLORS } from './constants';
+import { Algorithm, EDGE_COLORS, ProgressEdgeType } from './constants';
 import { LinePointData } from './path/linear';
+import CustomArrow from '../CustomArrow';
 
 // 편집 가능한 엣지의 타입 정의
 export type EditableEdge = Edge<{
+  label?: string; // 엣지 레이블
   algorithm?: Algorithm; // 사용할 알고리즘
   points: LinePointData[]; // 컨트롤 포인트 배열
+  type: ProgressEdgeType; // 엣지 타입 (이제 이넘 타입)
 }>;
-
 // 편집 가능한 엣지 컴포넌트
 // 노드 간의 연결을 표시하고 컨트롤 포인트를 통해 엣지의 모양을 조정할 수 있음
 export function EditableEdgeComponent({
@@ -31,8 +33,7 @@ export function EditableEdgeComponent({
   target,
   targetX,
   targetY,
-  markerEnd,
-  data = { points: [] },
+  data = { points: [], type: ProgressEdgeType.YES },
   ...delegated
 }: EdgeProps<EditableEdge>) {
   // 소스와 타겟 노드의 위치 정보
@@ -40,7 +41,7 @@ export function EditableEdgeComponent({
   const targetOrigin = { x: targetX, y: targetY } as XYPosition;
 
   // 엣지의 색상 설정 (알고리즘에 따라 다름)
-  const color = COLORS[data.algorithm ?? Algorithm.Linear];
+  const color = EDGE_COLORS[data.type as ProgressEdgeType];
 
   // React Flow의 엣지 상태 관리
   const { setEdges } = useReactFlow<BuiltInNode, EditableEdge>();
@@ -58,16 +59,16 @@ export function EditableEdgeComponent({
   const setEdgeLinePoints = useCallback(
     (update: (points: LinePointData[]) => LinePointData[]) => {
       setEdges((edges) =>
-        edges.map((e) => {
-          if (e.id !== id) return e;
-          if (!isEditableEdge(e)) return e;
+        edges.map((edge) => {
+          if (edge.id !== id) return edge;
+          if (!isEditableEdge(edge)) return edge;
 
           // 기존 points 배열에서 업데이트만 적용
-          const updatedPoints = update(e.data?.points ?? []);
+          const updatedPoints = update(edge.data?.points ?? []);
 
-          const data = { ...e.data, points: updatedPoints };
+          const data = { ...edge.data, points: updatedPoints, type: edge.data?.type as ProgressEdgeType };
 
-          return { ...e, data };
+          return { ...edge, data };
         }),
       );
     },
@@ -85,12 +86,13 @@ export function EditableEdgeComponent({
 
   return (
     <>
+      <CustomArrow id={id} color={color} strokeWidth={2} />
       {/* 기본 엣지 렌더링 */}
       <BaseEdge
         id={id}
         path={path}
         {...delegated}
-        markerEnd={markerEnd}
+        markerEnd={`url(#${id})`}
         style={{
           stroke: color,
         }}

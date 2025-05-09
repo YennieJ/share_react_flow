@@ -1,7 +1,6 @@
 export default function CustomArrow({ id, color, strokeWidth }: { id: string; color: string; strokeWidth: number }) {
   return (
     <marker
-      className="react-flow__arrowhead"
       id={id}
       markerWidth="12.5"
       markerHeight="12.5"

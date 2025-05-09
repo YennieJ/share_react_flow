@@ -2,7 +2,7 @@ import { Node } from '@xyflow/react';
 
 import { EditableEdge, EditableEdgeComponent } from './edges/EditableEdge';
 import { CustomNode } from './nodes/CustomNode';
-import { Algorithm } from './edges/EditableEdge/constants';
+import { Algorithm, ProgressEdgeType } from './edges/EditableEdge/constants';
 
 export const nodeTypes = {
   custom: CustomNode,
@@ -54,6 +54,7 @@ export const initialEdges: EditableEdge[] = [
     data: {
       algorithm: Algorithm.Linear,
       points: [],
+      type: ProgressEdgeType.ALL,
     },
   },
 ];

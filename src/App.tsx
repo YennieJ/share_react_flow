@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -11,15 +11,25 @@ import {
   Node,
   Edge,
   Connection,
-} from '@xyflow/react';
+  Panel,
+} from "@xyflow/react";
 
-import '@xyflow/react/dist/style.css';
+import "@xyflow/react/dist/style.css";
 
-import { initialNodes, nodeTypes, initialEdges, edgeTypes } from './initialElements';
-import { useAppStore } from './store';
-import { ControlPointData, EditableEdge } from './edges/EditableEdge';
-import { ConnectionLine } from './edges/ConnectionLine';
-import { DEFAULT_ALGORITHM, ProgressEdgeType } from './edges/EditableEdge/constants';
+import {
+  initialNodes,
+  nodeTypes,
+  initialEdges,
+  edgeTypes,
+} from "./initialElements";
+import { useAppStore } from "./store";
+import { ControlPointData, EditableEdge } from "./edges/EditableEdge";
+import { ConnectionLine } from "./edges/ConnectionLine";
+import {
+  DEFAULT_ALGORITHM,
+  ProgressEdgeType,
+} from "./edges/EditableEdge/constants";
+import { Toolbar } from "./components/Toolbar";
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -31,7 +41,8 @@ const isValidConnection = (connection: Connection | EditableEdge) => {
 // 노드 클릭시 포인트 위치 변경 수정
 export default function EditableEdgeFlow() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
+  const [edges, setEdges, onEdgesChange] =
+    useEdgesState<EditableEdge>(initialEdges);
   // console.log(edges);
 
   const onNodeDrag = useCallback(
@@ -109,7 +120,7 @@ export default function EditableEdgeFlow() {
         setEdges(updatedEdges);
       }
     },
-    [edges, setEdges],
+    [edges, setEdges]
   );
 
   const onConnect: OnConnect = useCallback(
@@ -122,7 +133,7 @@ export default function EditableEdgeFlow() {
       const edge: EditableEdge = {
         ...connection,
         id: `${Date.now()}-${connection.source}-${connection.target}`,
-        type: 'editable-edge',
+        type: "editable-edge",
         selected: true,
         reconnectable: true,
 
@@ -132,20 +143,23 @@ export default function EditableEdgeFlow() {
             (point, index) =>
               ({
                 ...point,
-                id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
-              } as ControlPointData),
+                id: `corner-${index}-${window.crypto
+                  .randomUUID()
+                  .substring(0, 8)}`,
+              } as ControlPointData)
           ),
           type: ProgressEdgeType.YES,
         },
       };
       setEdges((edges) => addEdge(edge, edges));
     },
-    [setEdges],
+    [setEdges]
   );
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      const { connectionLinePath, isReconnectionFromSource } = useAppStore.getState();
+      const { connectionLinePath, isReconnectionFromSource } =
+        useAppStore.getState();
       let cornerPoints = connectionLinePath.slice(1, -1);
 
       // 타겟 핸들에서 리커넥트하는 경우 미들 포인트 순서 반대로 설정
@@ -160,7 +174,10 @@ export default function EditableEdgeFlow() {
         // 새로 생성된 엣지 찾기 (일반적으로 새 연결 정보와 소스/타겟이 일치하는 엣지)
         return reconnectedEdges.map((e) => {
           // 새로 생성된 엣지 (소스와 타겟이 newConnection과 일치)
-          if (e.source === newConnection.source && e.target === newConnection.target) {
+          if (
+            e.source === newConnection.source &&
+            e.target === newConnection.target
+          ) {
             return {
               ...e,
               data: {
@@ -169,8 +186,10 @@ export default function EditableEdgeFlow() {
                   (point, index) =>
                     ({
                       ...point,
-                      id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
-                    } as ControlPointData),
+                      id: `corner-${index}-${window.crypto
+                        .randomUUID()
+                        .substring(0, 8)}`,
+                    } as ControlPointData)
                 ),
                 type: oldEdge.data?.type as ProgressEdgeType,
               },
@@ -180,7 +199,7 @@ export default function EditableEdgeFlow() {
         });
       });
     },
-    [setEdges],
+    [setEdges]
   );
   const { setIsReconnectionFrommSource } = useAppStore();
 
@@ -188,7 +207,7 @@ export default function EditableEdgeFlow() {
     <ReactFlow
       onReconnectStart={(event, edge, handleType) => {
         // 현재 재연결 중인 핸들 타입 저장
-        setIsReconnectionFrommSource(handleType === 'target');
+        setIsReconnectionFrommSource(handleType === "target");
       }}
       onReconnectEnd={() => {
         // 재연결 작업 종료 시 핸들 타입 상태 재설정
@@ -213,6 +232,9 @@ export default function EditableEdgeFlow() {
       fitViewOptions={fitViewOptions}
     >
       <Background />
+      <Panel position="top-left">
+        <Toolbar />
+      </Panel>
     </ReactFlow>
   );
 }

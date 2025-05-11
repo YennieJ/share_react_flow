@@ -2,7 +2,7 @@ import { type ConnectionLineComponentProps } from '@xyflow/react';
 import { useEffect, useMemo } from 'react';
 
 import { getPath } from './EditableEdge';
-import { COLORS, DEFAULT_ALGORITHM } from './EditableEdge/constants';
+import { DEFAULT_ALGORITHM } from './EditableEdge/constants';
 import { useAppStore } from '../store';
 import CustomArrow from './CustomArrow';
 import calculateEdgePath from './edgePathCalculator';
@@ -19,12 +19,25 @@ export function ConnectionLine({
   ...restProps
 }: ConnectionLineComponentProps) {
   // useAppStore 훅을 사용하여 상태 접근
-  const setConnectionLinePath = useAppStore((state) => state.setConnectionLinePath);
+  const setConnectionLinePath = useAppStore(
+    (state) => state.setConnectionLinePath
+  );
   const connectionLinePath = useAppStore((state) => state.connectionLinePath);
-  const isReconnectionFromSource = useAppStore((state) => state.isReconnectionFromSource);
+  const isReconnectionFromSource = useAppStore(
+    (state) => state.isReconnectionFromSource
+  );
 
   // 중간 포인트 계산
-  const conerPoints = calculateEdgePath({ fromX, fromY, toX, toY, fromPosition, toPosition, toNode, ...restProps });
+  const conerPoints = calculateEdgePath({
+    fromX,
+    fromY,
+    toX,
+    toY,
+    fromPosition,
+    toPosition,
+    toNode,
+    ...restProps,
+  });
 
   // 시작 포인트, 중간 포인트들, 끝 포인트를 포함한 전체 경로 포인트
   const allPoints = useMemo(() => {
@@ -34,7 +47,8 @@ export function ConnectionLine({
   // 전역 스토어에 경로 저장
   useEffect(() => {
     // 현재 경로와 이전 경로가 다른 경우에만 업데이트
-    const isPathChanged = JSON.stringify(allPoints) !== JSON.stringify(connectionLinePath);
+    const isPathChanged =
+      JSON.stringify(allPoints) !== JSON.stringify(connectionLinePath);
 
     if (isPathChanged) {
       setConnectionLinePath(allPoints);
@@ -49,11 +63,12 @@ export function ConnectionLine({
   return (
     <g>
       <defs>
-        <CustomArrow id={arrowId} color={COLORS[DEFAULT_ALGORITHM]} strokeWidth={2} />
+        <CustomArrow id={arrowId} color={'black'} strokeWidth={2} />
       </defs>
+      ㅈ
       <path
         fill="none"
-        stroke={COLORS[DEFAULT_ALGORITHM]}
+        stroke={'black'}
         d={path}
         markerStart={isReconnectionFromSource ? `url(#${arrowId})` : ``}
         markerEnd={isReconnectionFromSource ? `` : `url(#${arrowId})`}

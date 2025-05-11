@@ -11,7 +11,12 @@ import {
 
 import { ControlPoint } from './ControlPoint';
 import { getPath, getControlPoints } from './path';
-import { Algorithm, EDGE_COLORS, ProgressEdgeType } from './constants';
+import {
+  Algorithm,
+  DASHED_STYLE,
+  EDGE_COLORS,
+  ProgressEdgeType,
+} from './constants';
 import { LinePointData } from './path/linear';
 import CustomArrow from '../CustomArrow';
 
@@ -66,13 +71,17 @@ export function EditableEdgeComponent({
           // 기존 points 배열에서 업데이트만 적용
           const updatedPoints = update(edge.data?.points ?? []);
 
-          const data = { ...edge.data, points: updatedPoints, type: edge.data?.type as ProgressEdgeType };
+          const data = {
+            ...edge.data,
+            points: updatedPoints,
+            type: edge.data?.type as ProgressEdgeType,
+          };
 
           return { ...edge, data };
-        }),
+        })
       );
     },
-    [id, setEdges],
+    [id, setEdges]
   );
 
   // 엣지 경로 생성에 사용될 포인트 배열
@@ -95,6 +104,7 @@ export function EditableEdgeComponent({
         markerEnd={`url(#${id})`}
         style={{
           stroke: color,
+          strokeDasharray: DASHED_STYLE, // 점선 스타일 적용
         }}
       />
 
@@ -114,4 +124,5 @@ export function EditableEdgeComponent({
 }
 
 // 엣지가 편집 가능한 엣지인지 확인하는 타입 가드
-const isEditableEdge = (edge: Edge): edge is EditableEdge => edge.type === 'editable-edge';
+const isEditableEdge = (edge: Edge): edge is EditableEdge =>
+  edge.type === 'editable-edge';

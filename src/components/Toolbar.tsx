@@ -1,15 +1,21 @@
 import { type ChangeEventHandler } from 'react';
 import { useEdges, useReactFlow } from '@xyflow/react';
 
-import { EDGE_COLORS, ProgressEdgeType } from '../edges/EditableEdge/constants';
+import { EDGE_COLORS, EdgeProgressType } from '../edges/EditableEdge/constants';
 import { EditableEdge } from '../edges/EditableEdge';
 
 import css from './Toolbar.module.css';
 
 const typeVariants = [
-  { type: ProgressEdgeType.YES, label: 'Yes' },
-  { type: ProgressEdgeType.NO, label: 'No' },
-  { type: ProgressEdgeType.ALL, label: 'All' },
+  { type: EdgeProgressType.YES, label: 'Yes' },
+  { type: EdgeProgressType.NO, label: 'No' },
+  { type: EdgeProgressType.ALL, label: 'All' },
+];
+
+// Optional 라디오 버튼 그룹
+const optionalVariants = [
+  { value: 'Y', label: 'Y' },
+  { value: 'N', label: 'N' },
 ];
 
 // A toolbar that allows the user to change the algorithm of the selected edge
@@ -31,6 +37,24 @@ export function Toolbar() {
             data: {
               ...edge.data,
               type: e.target.value,
+            },
+          };
+        }
+        return edge;
+      });
+    });
+  };
+
+  // Optional 변경 핸들러
+  const onOptionalChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+    setEdges((edges) => {
+      return edges.map((edge) => {
+        if (edge.id === selectedEdge?.id) {
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              optionalYn: e.target.value,
             },
           };
         }
@@ -73,6 +97,23 @@ export function Toolbar() {
                 >
                   {typeVariant.label}
                 </label>
+              </div>
+            ))}
+          </div>
+          <div className={css.edgevariants}>
+            <div style={{ fontWeight: 'bold' }}>Optional</div>
+            {optionalVariants.map((opt) => (
+              <div key={opt.value}>
+                <input
+                  type="radio"
+                  id={opt.value}
+                  name="edge-optional"
+                  value={opt.value}
+                  checked={selectedEdge?.data?.optionalYn === opt.value}
+                  disabled={!selectedEdge}
+                  onChange={onOptionalChange}
+                />
+                <label htmlFor={opt.value}>{opt.label}</label>
               </div>
             ))}
           </div>

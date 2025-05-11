@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,24 +12,25 @@ import {
   Edge,
   Connection,
   Panel,
-} from "@xyflow/react";
+} from '@xyflow/react';
 
-import "@xyflow/react/dist/style.css";
+import '@xyflow/react/dist/style.css';
 
 import {
   initialNodes,
   nodeTypes,
   initialEdges,
   edgeTypes,
-} from "./initialElements";
-import { useAppStore } from "./store";
-import { ControlPointData, EditableEdge } from "./edges/EditableEdge";
-import { ConnectionLine } from "./edges/ConnectionLine";
+} from './initialElements';
+import { useAppStore } from './store';
+import { ControlPointData, EditableEdge } from './edges/EditableEdge';
+import { ConnectionLine } from './edges/ConnectionLine';
 import {
   DEFAULT_ALGORITHM,
-  ProgressEdgeType,
-} from "./edges/EditableEdge/constants";
-import { Toolbar } from "./components/Toolbar";
+  EdgeOptionalYn,
+  EdgeProgressType,
+} from './edges/EditableEdge/constants';
+import { Toolbar } from './components/Toolbar';
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -133,7 +134,7 @@ export default function EditableEdgeFlow() {
       const edge: EditableEdge = {
         ...connection,
         id: `${Date.now()}-${connection.source}-${connection.target}`,
-        type: "editable-edge",
+        type: 'editable-edge',
         selected: true,
         reconnectable: true,
 
@@ -148,7 +149,8 @@ export default function EditableEdgeFlow() {
                   .substring(0, 8)}`,
               } as ControlPointData)
           ),
-          type: ProgressEdgeType.YES,
+          type: EdgeProgressType.YES,
+          optionalYn: 'N',
         },
       };
       setEdges((edges) => addEdge(edge, edges));
@@ -191,7 +193,8 @@ export default function EditableEdgeFlow() {
                         .substring(0, 8)}`,
                     } as ControlPointData)
                 ),
-                type: oldEdge.data?.type as ProgressEdgeType,
+                type: oldEdge.data?.type as EdgeProgressType,
+                optionalYn: oldEdge.data?.optionalYn as EdgeOptionalYn,
               },
             } as EditableEdge;
           }
@@ -207,7 +210,7 @@ export default function EditableEdgeFlow() {
     <ReactFlow
       onReconnectStart={(event, edge, handleType) => {
         // 현재 재연결 중인 핸들 타입 저장
-        setIsReconnectionFrommSource(handleType === "target");
+        setIsReconnectionFrommSource(handleType === 'target');
       }}
       onReconnectEnd={() => {
         // 재연결 작업 종료 시 핸들 타입 상태 재설정

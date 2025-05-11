@@ -49,6 +49,7 @@ export default function EditableEdgeFlow() {
     useEdgesState<EditableEdge>(initialEdges);
   // console.log(edges);
 
+  const { setConnectionLinePath } = useAppStore();
   const onNodeDrag = useCallback(
     (_, node: Node) => {
       const nodeId = node.id;
@@ -85,37 +86,28 @@ export default function EditableEdgeFlow() {
           const index = updatedEdges.findIndex((e) => e.id === edge.id);
           if (index === -1) return;
 
-          if (edge.data?.isActive) {
-            // isActive가 true인 경우: Y값만 업데이트
-            const newPoints = [...edge.data.points];
+          const nodeWidth = node.measured?.width ?? 0;
+          const cornerPoints = calculateEdgePath({
+            fromX: node.position.x + nodeWidth,
+            fromY: node.position.y + (node.measured?.height ?? 0) / 2,
+            toX: toNode.position.x,
+            toY: toNode.position.y + (toNode.measured?.height ?? 0) / 2,
+            fromPosition: Position.Right,
+            toPosition: Position.Left,
+            toNode: toNode as InternalNode,
+            isActive: edge.data?.isActive,
+            existingPoints: edge.data?.points,
+            isSourceNodeMoving: true,
+          });
 
-            newPoints[0] = {
-              ...newPoints[0],
-              y: node.position.y + (node.measured?.height ?? 0) / 2,
-            };
-            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
-          } else {
-            // isActive가 false인 경우: 코너 포인트 재계산
-            const nodeWidth = node.measured?.width ?? 0;
-            const cornerPoints = calculateEdgePath({
-              fromX: node.position.x + nodeWidth,
-              fromY: node.position.y + (node.measured?.height ?? 0) / 2,
-              toX: toNode.position.x,
-              toY: toNode.position.y + (toNode.measured?.height ?? 0) / 2,
-              fromPosition: Position.Right,
-              toPosition: Position.Left,
-              toNode: toNode as InternalNode,
-            });
+          const newPoints = cornerPoints.map((point, i) => ({
+            ...point,
+            id:
+              edge.data?.points?.[i]?.id ||
+              `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+          }));
 
-            const newPoints = cornerPoints.map((point, i) => ({
-              ...point,
-              id:
-                edge.data?.points[i]?.id ||
-                `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
-            }));
-
-            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
-          }
+          edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
         });
 
       // 타겟 노드 처리
@@ -128,41 +120,37 @@ export default function EditableEdgeFlow() {
           const index = updatedEdges.findIndex((e) => e.id === edge.id);
           if (index === -1) return;
 
-          if (edge.data?.isActive) {
-            // isActive가 true인 경우: 마지막 포인트만 업데이트
-            if (!edge.data?.points?.length) return;
-
-            const newPoints = [...edge.data.points];
-            const lastIndex = newPoints.length - 1;
-            newPoints[lastIndex] = {
-              ...newPoints[lastIndex],
-              y: node.position.y + (node.measured?.height ?? 0) / 2,
-            };
-
-            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
-          } else {
-            // isActive가 false인 경우: 코너 포인트 재계산
-            const sourceNodeWidth = sourceNode.measured?.width ?? 0;
-            const cornerPoints = calculateEdgePath({
-              fromX: sourceNode.position.x + sourceNodeWidth,
-              fromY:
-                sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
-              toX: node.position.x,
-              toY: node.position.y + (node.measured?.height ?? 0) / 2,
-              fromPosition: Position.Right,
-              toPosition: Position.Left,
-              toNode: node as InternalNode,
-            });
-
-            const newPoints = cornerPoints.map((point, i) => ({
-              ...point,
-              id:
-                edge.data?.points[i]?.id ||
-                `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
-            }));
-
-            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          // 타겟 노드가 이동 중일 때 points가 없으면 처리하지 않음
+          if (
+            edge.data?.isActive &&
+            (!edge.data?.points || edge.data.points.length === 0)
+          ) {
+            return;
           }
+
+          const sourceNodeWidth = sourceNode.measured?.width ?? 0;
+          const cornerPoints = calculateEdgePath({
+            fromX: sourceNode.position.x + sourceNodeWidth,
+            fromY:
+              sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
+            toX: node.position.x,
+            toY: node.position.y + (node.measured?.height ?? 0) / 2,
+            fromPosition: Position.Right,
+            toPosition: Position.Left,
+            toNode: node as InternalNode,
+            isActive: edge.data?.isActive,
+            existingPoints: edge.data?.points,
+            isSourceNodeMoving: false,
+          });
+
+          const newPoints = cornerPoints.map((point, i) => ({
+            ...point,
+            id:
+              edge.data?.points?.[i]?.id ||
+              `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+          }));
+
+          edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
         });
 
       if (edgesChanged) {
@@ -187,6 +175,7 @@ export default function EditableEdgeFlow() {
         reconnectable: true,
 
         data: {
+          isActive: false,
           algorithm: DEFAULT_ALGORITHM,
           points: cornerPoints.map(
             (point, index) =>
@@ -206,7 +195,6 @@ export default function EditableEdgeFlow() {
     [setEdges]
   );
 
-  // yennie: 같은 곳을 연결한 경우에는 변경하는 것이 없도록 하자
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
       const { connectionLinePath, isReconnectionFromSource } =
@@ -260,10 +248,12 @@ export default function EditableEdgeFlow() {
       onReconnectStart={(event, edge, handleType) => {
         // 현재 재연결 중인 핸들 타입 저장
         setIsReconnectionFrommSource(handleType === 'target');
+        setConnectionLinePath(edge.data?.points || []);
       }}
       onReconnectEnd={() => {
         // 재연결 작업 종료 시 핸들 타입 상태 재설정
         setIsReconnectionFrommSource(null);
+        setConnectionLinePath([]);
       }}
       className="validationflow"
       snapToGrid={false}

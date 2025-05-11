@@ -9,6 +9,7 @@ import calculateEdgePath from './edgePathCalculator';
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시
 
+// yennie: 커넥션 라인에서 리커넥션 중 isActive를 확인해서 노드와 움직임을 같게 만들어야함
 export function ConnectionLine({
   fromX,
   fromY,
@@ -27,8 +28,11 @@ export function ConnectionLine({
     (state) => state.isReconnectionFromSource
   );
 
+  // 리커넥션 중인지 여부 확인
+  const isReconnecting = isReconnectionFromSource !== null;
+
   // 중간 포인트 계산
-  const conerPoints = calculateEdgePath({
+  const cornerPoints = calculateEdgePath({
     fromX,
     fromY,
     toX,
@@ -36,12 +40,15 @@ export function ConnectionLine({
     fromPosition,
     toPosition,
     toNode,
+    isActive: true, // 리커넥션 중에는 isActive를 true로 전달하여 기존 로직을 활용
+    existingPoints: isReconnecting ? connectionLinePath.slice(1, -1) : [], // 리커넥션 중이면 기존 포인트 전달
+    isSourceNodeMoving: isReconnectionFromSource === false, // 소스 노드에서 리커넥션 중인지 여부
   });
 
   // 시작 포인트, 중간 포인트들, 끝 포인트를 포함한 전체 경로 포인트
   const allPoints = useMemo(() => {
-    return [{ x: fromX, y: fromY }, ...conerPoints, { x: toX, y: toY }];
-  }, [fromX, fromY, toX, toY, conerPoints]);
+    return [{ x: fromX, y: fromY }, ...cornerPoints, { x: toX, y: toY }];
+  }, [fromX, fromY, toX, toY, cornerPoints]);
 
   // 전역 스토어에 경로 저장
   useEffect(() => {

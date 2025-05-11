@@ -9,6 +9,9 @@ interface CalculateEdgePathParams {
   fromPosition?: Position;
   toPosition?: Position;
   toNode: InternalNode<Node> | null;
+  isActive?: boolean;
+  existingPoints?: XYPosition[];
+  isSourceNodeMoving?: boolean;
 }
 
 interface CalculateCornerPointsParams {
@@ -29,9 +32,12 @@ const calculateEdgePath = ({
   fromY,
   toX,
   toY,
+  fromPosition,
   toPosition,
   toNode,
-  fromPosition,
+  isActive = false,
+  existingPoints = [],
+  isSourceNodeMoving = true,
 }: CalculateEdgePathParams) => {
   const { isReconnectionFromSource } = useAppStore.getState();
 
@@ -39,6 +45,28 @@ const calculateEdgePath = ({
   const middleX = (fromX + toX) / 2;
   const middleY = (fromY + toY) / 2;
 
+  if (isActive && existingPoints && existingPoints.length > 0) {
+    const newPoints = [...existingPoints];
+
+    if (isSourceNodeMoving) {
+      // 소스 노드가 이동 중인 경우: 첫 번째 포인트의 Y값만 업데이트
+      newPoints[0] = {
+        ...newPoints[0],
+        y: fromY,
+      };
+    } else {
+      // 타겟 노드가 이동 중인 경우: 마지막 포인트의 Y값만 업데이트
+      const lastIndex = newPoints.length - 1;
+      newPoints[lastIndex] = {
+        ...newPoints[lastIndex],
+        y: toY,
+      };
+    }
+
+    return newPoints;
+  }
+
+  // isActive가 false이거나 기존 포인트가 없는 경우: 기존 코너 포인트 계산 로직
   // source -- target
   if (fromY === toY) {
     return [];

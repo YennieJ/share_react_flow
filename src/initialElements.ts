@@ -52,6 +52,7 @@ export const initialEdges: EditableEdge[] = [
     targetHandle: 'left',
     animated: false,
     data: {
+      isActive: false,
       algorithm: Algorithm.Linear,
       points: [],
       type: EdgeProgressType.YES,

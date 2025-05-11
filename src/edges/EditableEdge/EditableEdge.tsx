@@ -24,6 +24,7 @@ import CustomArrow from '../CustomArrow';
 // 편집 가능한 엣지의 타입 정의
 export type EditableEdge = Edge<{
   label?: string; // 엣지 레이블
+  isActive?: boolean; // 엣지 활성 여부
   algorithm?: Algorithm; // 사용할 알고리즘
   points: LinePointData[]; // 컨트롤 포인트 배열
   type: EdgeProgressType; // 엣지 타입 (이제 이넘 타입)
@@ -78,6 +79,7 @@ export function EditableEdgeComponent({
             points: updatedPoints,
             type: edge.data?.type as EdgeProgressType,
             optionalYn: edge.data?.optionalYn as EdgeOptionalYn,
+            isActive: true,
           };
 
           return { ...edge, data };

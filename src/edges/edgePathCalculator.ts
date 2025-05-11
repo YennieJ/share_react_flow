@@ -1,5 +1,15 @@
-import { ConnectionLineComponentProps, InternalNode, Node, Position, XYPosition } from '@xyflow/react';
+import { InternalNode, Node, Position, XYPosition } from '@xyflow/react';
 import { useAppStore } from '../store';
+
+interface CalculateEdgePathParams {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  fromPosition?: Position;
+  toPosition?: Position;
+  toNode: InternalNode<Node> | null;
+}
 
 interface CalculateCornerPointsParams {
   fromX: number;
@@ -22,7 +32,7 @@ const calculateEdgePath = ({
   toPosition,
   toNode,
   fromPosition,
-}: ConnectionLineComponentProps) => {
+}: CalculateEdgePathParams) => {
   const { isReconnectionFromSource } = useAppStore.getState();
 
   const offsetX = 10; // X축으로 10px 떨어진 거리
@@ -36,7 +46,17 @@ const calculateEdgePath = ({
 
   // 재연결 중이고 소스 노드와 연결된 엣지인 경우
   if (isReconnectionFromSource) {
-    return calculateCornerPointsFromSource({ fromX, fromY, toX, toY, fromPosition, toNode, offsetX, middleX, middleY });
+    return calculateCornerPointsFromSource({
+      fromX,
+      fromY,
+      toX,
+      toY,
+      fromPosition,
+      toNode,
+      offsetX,
+      middleX,
+      middleY,
+    });
   }
 
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 오른쪽에 있는 경우 (오른쪽으로 드래그)
@@ -50,7 +70,17 @@ const calculateEdgePath = ({
     ];
   }
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 왼쪽에 있는 경우 (왼쪽으로 드래그)
-  return calculateLeftDragCornerPoints({ fromX, fromY, toX, toY, toPosition, toNode, offsetX, middleY, middleX });
+  return calculateLeftDragCornerPoints({
+    fromX,
+    fromY,
+    toX,
+    toY,
+    toPosition,
+    toNode,
+    offsetX,
+    middleY,
+    middleX,
+  });
 };
 
 // 소스 노드와 연결된 엣지의 코너 포인트를 계산하는 함수

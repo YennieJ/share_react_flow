@@ -8,6 +8,7 @@ import CustomArrow from './CustomArrow';
 import calculateEdgePath from './edgePathCalculator';
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시
+
 export function ConnectionLine({
   fromX,
   fromY,
@@ -16,7 +17,6 @@ export function ConnectionLine({
   toPosition,
   toNode,
   fromPosition,
-  ...restProps
 }: ConnectionLineComponentProps) {
   // useAppStore 훅을 사용하여 상태 접근
   const setConnectionLinePath = useAppStore(
@@ -36,7 +36,6 @@ export function ConnectionLine({
     fromPosition,
     toPosition,
     toNode,
-    ...restProps,
   });
 
   // 시작 포인트, 중간 포인트들, 끝 포인트를 포함한 전체 경로 포인트
@@ -65,7 +64,6 @@ export function ConnectionLine({
       <defs>
         <CustomArrow id={arrowId} color={'black'} strokeWidth={2} />
       </defs>
-      ㅈ
       <path
         fill="none"
         stroke={'black'}

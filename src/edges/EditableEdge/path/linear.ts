@@ -20,8 +20,16 @@ function calculatePathPoints(points: (LinePointData | XYPosition)[]) {
     // y값이 다른 경우 중간 포인트 2개 생성
     const middleX = (start.x + end.x) / 2;
     const cornerPoints = [
-      { x: middleX, y: start.y, id: `corner-0-${window.crypto.randomUUID().substring(0, 8)}` },
-      { x: middleX, y: end.y, id: `corner-1-${window.crypto.randomUUID().substring(0, 8)}` },
+      {
+        x: middleX,
+        y: start.y,
+        id: `corner-0-${window.crypto.randomUUID().substring(0, 8)}`,
+      },
+      {
+        x: middleX,
+        y: end.y,
+        id: `corner-1-${window.crypto.randomUUID().substring(0, 8)}`,
+      },
     ];
     return [start, ...cornerPoints, end];
   }
@@ -69,6 +77,12 @@ export function getLinearControlPoints(points: (LinePointData | XYPosition)[]) {
     const current = pathPoints[i];
     const next = pathPoints[i + 1];
 
+    // 포인트가 정확히 4개인 경우에만 Y값 차이 검사
+    // yennie: 꼭 4개인 경우에만 생성이 되어져야하는지는 확인이 필요함
+    if (pathPoints.length === 4 && Math.abs(current.y - next.y) < 1) {
+      continue;
+    }
+
     // 두 점 사이의 중간 지점 계산
     const controlPointX = (current.x + next.x) / 2;
     const controlPointY = (current.y + next.y) / 2;
@@ -82,7 +96,7 @@ export function getLinearControlPoints(points: (LinePointData | XYPosition)[]) {
         before:
           'id' in current
             ? {
-                id: current.id,
+                id: String(current.id),
                 x: current.x,
                 y: current.y,
               }
@@ -90,7 +104,7 @@ export function getLinearControlPoints(points: (LinePointData | XYPosition)[]) {
         after:
           'id' in next
             ? {
-                id: next.id,
+                id: String(next.id),
                 x: next.x,
                 y: next.y,
               }

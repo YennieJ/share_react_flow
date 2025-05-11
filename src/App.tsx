@@ -12,6 +12,8 @@ import {
   Edge,
   Connection,
   Panel,
+  Position,
+  InternalNode,
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -31,6 +33,7 @@ import {
   EdgeProgressType,
 } from './edges/EditableEdge/constants';
 import { Toolbar } from './components/Toolbar';
+import calculateEdgePath from './edges/edgePathCalculator';
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -48,80 +51,125 @@ export default function EditableEdgeFlow() {
 
   const onNodeDrag = useCallback(
     (_, node: Node) => {
-      // 드래그 중인 노드 ID 가져오기
       const nodeId = node.id;
-
-      // 엣지 목록 복사
       const updatedEdges = [...edges];
       let edgesChanged = false;
-      // 소스 노드로 사용된 경우 (엣지의 시작점)
-      const sourceEdges = edges.filter((edge) => edge.source === nodeId);
 
-      if (sourceEdges.length > 0) {
-        sourceEdges.forEach((edge) => {
-          if (edge.data && edge.data.points && edge.data.points.length > 0) {
-            const updatedEdge = {
-              ...edge,
-              data: {
-                ...edge.data,
-                points: [...edge.data.points],
-              },
+      // 공통 함수: edge 업데이트 로직 통합
+      const updateEdge = (
+        edge: EditableEdge,
+        newPoints: any[],
+        index: number
+      ) => {
+        const updatedEdge = {
+          ...edge,
+          data: {
+            ...edge.data,
+            points: newPoints,
+            type: edge.data?.type || EdgeProgressType.YES,
+            optionalYn: edge.data?.optionalYn || 'N',
+          },
+        };
+
+        updatedEdges[index] = updatedEdge;
+        return true;
+      };
+
+      // 소스 노드 처리
+      edges
+        .filter((edge) => edge.source === nodeId)
+        .forEach((edge) => {
+          const toNode = nodes.find((n) => n.id === edge.target);
+          if (!toNode) return;
+
+          const index = updatedEdges.findIndex((e) => e.id === edge.id);
+          if (index === -1) return;
+
+          if (edge.data?.isActive) {
+            // isActive가 true인 경우: Y값만 업데이트
+            const newPoints = [...edge.data.points];
+
+            newPoints[0] = {
+              ...newPoints[0],
+              y: node.position.y + (node.measured?.height ?? 0) / 2,
             };
+            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          } else {
+            // isActive가 false인 경우: 코너 포인트 재계산
+            const nodeWidth = node.measured?.width ?? 0;
+            const cornerPoints = calculateEdgePath({
+              fromX: node.position.x + nodeWidth,
+              fromY: node.position.y + (node.measured?.height ?? 0) / 2,
+              toX: toNode.position.x,
+              toY: toNode.position.y + (toNode.measured?.height ?? 0) / 2,
+              fromPosition: Position.Right,
+              toPosition: Position.Left,
+              toNode: toNode as InternalNode,
+            });
 
-            // 첫 번째 포인트의 y만 업데이트하고 x는 유지
-            updatedEdge.data.points[0] = {
-              ...updatedEdge.data.points[0],
+            const newPoints = cornerPoints.map((point, i) => ({
+              ...point,
+              id:
+                edge.data?.points[i]?.id ||
+                `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+            }));
+
+            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          }
+        });
+
+      // 타겟 노드 처리
+      edges
+        .filter((edge) => edge.target === nodeId)
+        .forEach((edge) => {
+          const sourceNode = nodes.find((n) => n.id === edge.source);
+          if (!sourceNode) return;
+
+          const index = updatedEdges.findIndex((e) => e.id === edge.id);
+          if (index === -1) return;
+
+          if (edge.data?.isActive) {
+            // isActive가 true인 경우: 마지막 포인트만 업데이트
+            if (!edge.data?.points?.length) return;
+
+            const newPoints = [...edge.data.points];
+            const lastIndex = newPoints.length - 1;
+            newPoints[lastIndex] = {
+              ...newPoints[lastIndex],
               y: node.position.y + (node.measured?.height ?? 0) / 2,
             };
 
-            // 변경된 엣지로 교체
-            const index = updatedEdges.findIndex((e) => e.id === edge.id);
-            if (index !== -1) {
-              updatedEdges[index] = updatedEdge;
-              edgesChanged = true;
-            }
+            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          } else {
+            // isActive가 false인 경우: 코너 포인트 재계산
+            const sourceNodeWidth = sourceNode.measured?.width ?? 0;
+            const cornerPoints = calculateEdgePath({
+              fromX: sourceNode.position.x + sourceNodeWidth,
+              fromY:
+                sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
+              toX: node.position.x,
+              toY: node.position.y + (node.measured?.height ?? 0) / 2,
+              fromPosition: Position.Right,
+              toPosition: Position.Left,
+              toNode: node as InternalNode,
+            });
+
+            const newPoints = cornerPoints.map((point, i) => ({
+              ...point,
+              id:
+                edge.data?.points[i]?.id ||
+                `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+            }));
+
+            edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
           }
         });
-      }
 
-      // 타겟 노드로 사용된 경우 (엣지의 끝점)
-      const targetEdges = edges.filter((edge) => edge.target === nodeId);
-
-      if (targetEdges.length > 0) {
-        targetEdges.forEach((edge) => {
-          if (edge.data && edge.data.points && edge.data.points.length > 0) {
-            const lastIndex = edge.data.points.length - 1;
-
-            const updatedEdge = {
-              ...edge,
-              data: {
-                ...edge.data,
-                points: [...edge.data.points],
-              },
-            };
-
-            // 마지막 포인트의 y만 업데이트하고 x는 유지
-            updatedEdge.data.points[lastIndex] = {
-              ...updatedEdge.data.points[lastIndex],
-              y: node.position.y + (node.measured?.height ?? 0) / 2,
-            };
-
-            // 변경된 엣지로 교체
-            const index = updatedEdges.findIndex((e) => e.id === edge.id);
-            if (index !== -1) {
-              updatedEdges[index] = updatedEdge;
-              edgesChanged = true;
-            }
-          }
-        });
-      }
-
-      // 변경사항이 있으면 엣지 업데이트
       if (edgesChanged) {
         setEdges(updatedEdges);
       }
     },
-    [edges, setEdges]
+    [edges, setEdges, nodes]
   );
 
   const onConnect: OnConnect = useCallback(
@@ -158,6 +206,7 @@ export default function EditableEdgeFlow() {
     [setEdges]
   );
 
+  // yennie: 같은 곳을 연결한 경우에는 변경하는 것이 없도록 하자
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
       const { connectionLinePath, isReconnectionFromSource } =

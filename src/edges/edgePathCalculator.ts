@@ -45,17 +45,48 @@ const calculateEdgePath = ({
   const middleX = (fromX + toX) / 2;
   const middleY = (fromY + toY) / 2;
 
-  if (isActive && existingPoints && existingPoints.length > 0) {
-    const newPoints = [...existingPoints];
+  // 활성화된 엣지이고 기존 포인트가 있는 경우
+  if (isActive && existingPoints?.length > 0) {
+    let newPoints = [...existingPoints];
 
+    // 1. 소스 노드 이동 중인 경우
     if (isSourceNodeMoving) {
-      // 소스 노드가 이동 중인 경우: 첫 번째 포인트의 Y값만 업데이트
+      // 기본적으로 첫 포인트의 Y값은 항상 업데이트
       newPoints[0] = {
         ...newPoints[0],
         y: fromY,
       };
-    } else {
-      // 타겟 노드가 이동 중인 경우: 마지막 포인트의 Y값만 업데이트
+
+      if (isReconnectionFromSource) {
+        // 포인트가 두 개인 경우 (간단한 경로)
+        if (newPoints.length === 2) {
+          // 타겟노드가가 오른쪽에 있음
+          newPoints[0] = {
+            ...newPoints[0],
+            y: fromY,
+          };
+          newPoints[1] = {
+            ...newPoints[1],
+            y: toY,
+          };
+        } else {
+          newPoints = [...newPoints].reverse();
+          newPoints[0] = {
+            ...newPoints[0],
+            y: fromY,
+          };
+
+          // 마지막 포인트(원래 첫번째)는 toY로 업데이트
+          newPoints[newPoints.length - 1] = {
+            ...newPoints[newPoints.length - 1],
+            y: toY,
+          };
+        }
+      }
+    }
+    // 2. 타겟 노드 이동 중인 경우
+    else {
+      // 마지막 포인트의 Y값만 업데이트
       const lastIndex = newPoints.length - 1;
       newPoints[lastIndex] = {
         ...newPoints[lastIndex],
@@ -69,11 +100,13 @@ const calculateEdgePath = ({
   // isActive가 false이거나 기존 포인트가 없는 경우: 기존 코너 포인트 계산 로직
   // source -- target
   if (fromY === toY) {
+    // console.log('케이스 2: 소스와 타겟이 같은 Y축 위치');
     return [];
   }
 
   // 재연결 중이고 소스 노드와 연결된 엣지인 경우
   if (isReconnectionFromSource) {
+    // console.log('케이스 3: 소스 노드에서 재연결 중');
     return calculateCornerPointsFromSource({
       fromX,
       fromY,
@@ -92,12 +125,14 @@ const calculateEdgePath = ({
   //          |
   // source --
   if (toX > fromX) {
+    // console.log('케이스 4: 타겟이 소스보다 오른쪽에 있음');
     return [
       { x: middleX, y: fromY },
       { x: middleX, y: toY },
     ];
   }
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 왼쪽에 있는 경우 (왼쪽으로 드래그)
+  // console.log('케이스 5: 타겟이 소스보다 왼쪽에 있음');
   return calculateLeftDragCornerPoints({
     fromX,
     fromY,
@@ -127,6 +162,8 @@ const calculateCornerPointsFromSource = ({
   //          |
   // source --
   if (fromX > toX) {
+    // console.log('케이스 3-1: 소스가 타겟보다 오른쪽에 있음');
+
     return [
       { x: middleX, y: fromY },
       { x: middleX, y: toY },
@@ -135,12 +172,14 @@ const calculateCornerPointsFromSource = ({
 
   // 소스가 왼쪽 핸들인 경우
   if (fromPosition === 'left') {
+    // console.log('케이스 3-2: 소스가 왼쪽 핸들');
     //  -- target
     // |
     // -------------
     //             |
     //    source --
     if (toNode) {
+      // console.log('케이스 3-2-1: 타겟 노드 존재');
       return [
         { x: fromX - offsetX, y: fromY },
         { x: fromX - offsetX, y: middleY },
@@ -150,6 +189,7 @@ const calculateCornerPointsFromSource = ({
     }
 
     // 연결 되기 전
+    // console.log('케이스 3-2-2: 타겟 노드 없음');
     //      --target
     //     |
     //     --------------    source
@@ -165,6 +205,7 @@ const calculateCornerPointsFromSource = ({
   //             |
   //    source --
   if (fromPosition === 'right' && toNode) {
+    // console.log('케이스 3-3: 소스가 오른쪽 핸들이고 타겟 노드 존재');
     return [
       { x: fromX + offsetX, y: fromY },
       { x: fromX + offsetX, y: middleY },
@@ -172,6 +213,7 @@ const calculateCornerPointsFromSource = ({
       { x: toX + offsetX, y: toY },
     ];
   }
+  // console.log('케이스 3-4: 기타 케이스');
   return [];
 };
 
@@ -192,6 +234,7 @@ const calculateLeftDragCornerPoints = ({
   //             |
   //    source --
   if (toNode && toPosition === 'left') {
+    // console.log('케이스 5-1: 타겟 노드가 있고 왼쪽 핸들');
     return [
       { x: fromX + offsetX, y: fromY },
       { x: fromX + offsetX, y: middleY },
@@ -201,6 +244,7 @@ const calculateLeftDragCornerPoints = ({
   }
 
   // 연결되기 전 (타겟이 핸들에 붙지 않은 상태)
+  // console.log('케이스 5-2: 연결 전 또는 타겟이 왼쪽 핸들이 아님');
   // 연결되기 전
   //            target
   //     |

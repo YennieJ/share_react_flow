@@ -20,14 +20,11 @@ export function ConnectionLine({
   fromPosition,
 }: ConnectionLineComponentProps) {
   // useAppStore 훅을 사용하여 상태 접근
-  const setConnectionLinePath = useAppStore(
-    (state) => state.setConnectionLinePath
-  );
+  const setConnectionLinePath = useAppStore((state) => state.setConnectionLinePath);
   const connectionLinePath = useAppStore((state) => state.connectionLinePath);
-  const isReconnectionFromSource = useAppStore(
-    (state) => state.isReconnectionFromSource
-  );
-
+  const realPath = useAppStore((state) => state.realPath);
+  const isReconnectionFromSource = useAppStore((state) => state.isReconnectionFromSource);
+  const isEdgeActive = useAppStore((state) => state.isEdgeActive);
   // 리커넥션 중인지 여부 확인
   const isReconnecting = isReconnectionFromSource !== null;
 
@@ -40,9 +37,9 @@ export function ConnectionLine({
     fromPosition,
     toPosition,
     toNode,
-    isActive: true, // 리커넥션 중에는 isActive를 true로 전달하여 기존 로직을 활용
-    existingPoints: isReconnecting ? connectionLinePath.slice(1, -1) : [], // 리커넥션 중이면 기존 포인트 전달
-    isSourceNodeMoving: isReconnectionFromSource === false, // 소스 노드에서 리커넥션 중인지 여부
+    isActive: isEdgeActive, // 리커넥션 중에는 isActive를 true로 전달하여 기존 로직을 활용
+    existingPoints: isReconnecting ? realPath : [], // 리커넥션 중이면 기존 포인트 전달
+    isSourceNodeMoving: isReconnectionFromSource === true, // 소스 노드에서 리커넥션 중인지 여부
   });
 
   // 시작 포인트, 중간 포인트들, 끝 포인트를 포함한 전체 경로 포인트
@@ -53,8 +50,7 @@ export function ConnectionLine({
   // 전역 스토어에 경로 저장
   useEffect(() => {
     // 현재 경로와 이전 경로가 다른 경우에만 업데이트
-    const isPathChanged =
-      JSON.stringify(allPoints) !== JSON.stringify(connectionLinePath);
+    const isPathChanged = JSON.stringify(allPoints) !== JSON.stringify(connectionLinePath);
 
     if (isPathChanged) {
       setConnectionLinePath(allPoints);

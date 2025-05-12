@@ -18,6 +18,7 @@ export function ConnectionLine({
   toPosition,
   toNode,
   fromPosition,
+  fromNode,
 }: ConnectionLineComponentProps) {
   // useAppStore 훅을 사용하여 상태 접근
   const setConnectionLinePath = useAppStore((state) => state.setConnectionLinePath);
@@ -37,6 +38,7 @@ export function ConnectionLine({
     fromPosition,
     toPosition,
     toNode,
+    fromNode,
     isActive: isEdgeActive, // 리커넥션 중에는 isActive를 true로 전달하여 기존 로직을 활용
     existingPoints: isReconnecting ? realPath : [], // 리커넥션 중이면 기존 포인트 전달
     isSourceNodeMoving: isReconnectionFromSource === true, // 소스 노드에서 리커넥션 중인지 여부

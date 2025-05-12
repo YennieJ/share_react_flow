@@ -9,6 +9,7 @@ interface CalculateEdgePathParams {
   fromPosition?: Position;
   toPosition?: Position;
   toNode: InternalNode<Node> | null;
+  fromNode: InternalNode<Node> | null;
   isActive?: boolean;
   existingPoints?: XYPosition[];
   isSourceNodeMoving?: boolean;
@@ -22,6 +23,7 @@ interface CalculateCornerPointsParams {
   toPosition?: Position;
   fromPosition?: Position;
   toNode: InternalNode<Node> | null;
+  fromNode: InternalNode<Node> | null;
   offsetX: number;
   middleX: number;
   middleY: number;
@@ -35,6 +37,7 @@ const calculateEdgePath = ({
   fromPosition,
   toPosition,
   toNode,
+  fromNode,
   isActive = false,
   existingPoints = [],
   isSourceNodeMoving = true,
@@ -47,61 +50,13 @@ const calculateEdgePath = ({
 
   // 활성화된 엣지이고 기존 포인트가 있는 경우
   if (isActive && existingPoints?.length > 0) {
-    let newPoints = [...existingPoints];
-
-    // 1. 소스 노드 이동 중인 경우
-    if (isSourceNodeMoving) {
-      // 기본적으로 첫 포인트의 Y값은 항상 업데이트
-      newPoints[0] = {
-        ...newPoints[0],
-        y: fromY,
-      };
-
-      if (isReconnectionFromSource) {
-        // 포인트가 두 개인 경우 (간단한 경로)
-        if (newPoints.length === 2) {
-          // 타겟노드가가 오른쪽에 있음
-          newPoints[0] = {
-            ...newPoints[0],
-            y: fromY,
-          };
-          newPoints[1] = {
-            ...newPoints[1],
-            y: toY,
-          };
-        } else {
-          newPoints = [...newPoints].reverse();
-          newPoints[0] = {
-            ...newPoints[0],
-            y: fromY,
-          };
-
-          // 마지막 포인트(원래 첫번째)는 toY로 업데이트
-          newPoints[newPoints.length - 1] = {
-            ...newPoints[newPoints.length - 1],
-            y: toY,
-          };
-        }
-      }
-    }
-    // 2. 타겟 노드 이동 중인 경우
-    else {
-      // 마지막 포인트의 Y값만 업데이트
-      const lastIndex = newPoints.length - 1;
-      newPoints[lastIndex] = {
-        ...newPoints[lastIndex],
-        y: toY,
-      };
-    }
-
-    return newPoints;
-  }
-
-  // isActive가 false이거나 기존 포인트가 없는 경우: 기존 코너 포인트 계산 로직
-  // source -- target
-  if (fromY === toY) {
-    // console.log('케이스 2: 소스와 타겟이 같은 Y축 위치');
-    return [];
+    return calculateActiveEdgePath({
+      fromY,
+      toY,
+      existingPoints,
+      isSourceNodeMoving,
+      isReconnectionFromSource,
+    });
   }
 
   // 재연결 중이고 소스 노드와 연결된 엣지인 경우
@@ -114,6 +69,7 @@ const calculateEdgePath = ({
       toY,
       fromPosition,
       toNode,
+      fromNode,
       offsetX,
       middleX,
       middleY,
@@ -121,11 +77,19 @@ const calculateEdgePath = ({
   }
 
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 오른쪽에 있는 경우 (오른쪽으로 드래그)
-  //           -- target
-  //          |
-  // source --
+
   if (toX > fromX) {
     // console.log('케이스 4: 타겟이 소스보다 오른쪽에 있음');
+
+    // source -- target
+    if (fromY === toY) {
+      // console.log('케이스 2: 소스와 타겟이 같은 Y축 위치');
+      return [];
+    }
+
+    //           -- target
+    //          |
+    // source --
     return [
       { x: middleX, y: fromY },
       { x: middleX, y: toY },
@@ -140,10 +104,70 @@ const calculateEdgePath = ({
     toY,
     toPosition,
     toNode,
+    fromNode,
     offsetX,
     middleY,
     middleX,
   });
+};
+
+// 활성화된 엣지의 경로를 계산하는 함수
+const calculateActiveEdgePath = ({
+  fromY,
+  toY,
+  existingPoints,
+  isSourceNodeMoving,
+  isReconnectionFromSource,
+}: {
+  fromY: number;
+  toY: number;
+  existingPoints: XYPosition[];
+  isSourceNodeMoving: boolean;
+  isReconnectionFromSource: boolean | null;
+}): XYPosition[] => {
+  let newPoints = [...existingPoints];
+
+  // 소스 노드 이동 중인 경우
+  if (isSourceNodeMoving) {
+    // 기본적으로 첫 포인트의 Y값은 항상 업데이트
+    newPoints[0] = {
+      ...newPoints[0],
+      y: fromY,
+    };
+
+    if (isReconnectionFromSource) {
+      // 포인트가 두 개인 경우 (간단한 경로)
+      if (newPoints.length === 2) {
+        newPoints[1] = {
+          ...newPoints[1],
+          y: toY,
+        };
+      } else {
+        newPoints = [...newPoints].reverse();
+        newPoints[0] = {
+          ...newPoints[0],
+          y: fromY,
+        };
+
+        // 마지막 포인트(원래 첫번째)는 toY로 업데이트
+        newPoints[newPoints.length - 1] = {
+          ...newPoints[newPoints.length - 1],
+          y: toY,
+        };
+      }
+    }
+  }
+  // 타겟 노드 이동 중인 경우
+  else {
+    // 마지막 포인트의 Y값만 업데이트
+    const lastIndex = newPoints.length - 1;
+    newPoints[lastIndex] = {
+      ...newPoints[lastIndex],
+      y: toY,
+    };
+  }
+
+  return newPoints;
 };
 
 // 소스 노드와 연결된 엣지의 코너 포인트를 계산하는 함수
@@ -163,7 +187,6 @@ const calculateCornerPointsFromSource = ({
   // source --
   if (fromX > toX) {
     // console.log('케이스 3-1: 소스가 타겟보다 오른쪽에 있음');
-
     return [
       { x: middleX, y: fromY },
       { x: middleX, y: toY },
@@ -225,9 +248,26 @@ const calculateLeftDragCornerPoints = ({
   toY,
   toPosition,
   toNode,
+  fromNode,
   offsetX,
   middleY,
 }: CalculateCornerPointsParams): XYPosition[] => {
+  // source -- target
+  if (fromY === toY) {
+    // 노드의 상단 값 계산
+    const nodeY = fromNode?.position?.y ?? fromY;
+    const nodeHeight = fromNode?.measured?.height ?? 0;
+    const nodeTop = nodeY - nodeHeight / 2;
+    const middleY = (fromY + nodeTop) / 2;
+    const offsetY = 10;
+    // yennie: x도 비교해서 아래로도 만들어질 수 있게하자
+    return [
+      { x: fromX + offsetX, y: fromY },
+      { x: fromX + offsetX, y: middleY - offsetY },
+      { x: toX - offsetX, y: middleY - offsetY },
+      { x: toX - offsetX, y: toY },
+    ];
+  }
   //  -- target
   // |
   // -------------
@@ -244,8 +284,19 @@ const calculateLeftDragCornerPoints = ({
   }
 
   // 연결되기 전 (타겟이 핸들에 붙지 않은 상태)
-  // console.log('케이스 5-2: 연결 전 또는 타겟이 왼쪽 핸들이 아님');
-  // 연결되기 전
+  // 소스노드와 멀어진 상태
+  //            target
+  //     --------
+  //             |
+  //    source --
+  if (fromX - toX > (fromNode?.measured?.width ?? 0) * 2) {
+    return [
+      { x: fromX + offsetX, y: fromY },
+      { x: fromX + offsetX, y: toY },
+    ];
+  }
+
+  // 소스노드와 가까운 상태
   //            target
   //     |
   //     --------
@@ -254,7 +305,7 @@ const calculateLeftDragCornerPoints = ({
   return [
     { x: fromX + offsetX, y: fromY },
     { x: fromX + offsetX, y: middleY },
-    { x: toX, y: middleY },
+    // { x: toX, y: middleY },
   ];
 };
 

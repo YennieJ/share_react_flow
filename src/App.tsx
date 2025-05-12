@@ -67,6 +67,7 @@ export default function EditableEdgeFlow() {
         .filter((edge) => edge.source === nodeId)
         .forEach((edge) => {
           const toNode = nodes.find((n) => n.id === edge.target);
+
           if (!toNode) return;
 
           const index = updatedEdges.findIndex((e) => e.id === edge.id);
@@ -81,6 +82,7 @@ export default function EditableEdgeFlow() {
             fromPosition: Position.Right,
             toPosition: Position.Left,
             toNode: toNode as InternalNode,
+            fromNode: node as InternalNode,
             isActive: edge.data?.isActive,
             existingPoints: edge.data?.points,
             isSourceNodeMoving: true,
@@ -118,6 +120,7 @@ export default function EditableEdgeFlow() {
             fromPosition: Position.Right,
             toPosition: Position.Left,
             toNode: node as InternalNode,
+            fromNode: sourceNode as InternalNode,
             isActive: edge.data?.isActive,
             existingPoints: edge.data?.points,
             isSourceNodeMoving: false,

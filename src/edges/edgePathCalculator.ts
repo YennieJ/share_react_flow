@@ -61,7 +61,6 @@ const calculateEdgePath = ({
 
   // 재연결 중이고 소스 노드와 연결된 엣지인 경우
   if (isReconnectionFromSource) {
-    console.log('케이스 3: 소스 노드에서 재연결 중');
     return calculateCornerPointsFromSource({
       fromX,
       fromY,
@@ -79,11 +78,8 @@ const calculateEdgePath = ({
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 오른쪽에 있는 경우 (오른쪽으로 드래그)
 
   if (toX > fromX) {
-    console.log('케이스 4: 타겟이 소스보다 오른쪽에 있음');
-
     // source -- target
     if (fromY === toY) {
-      console.log('케이스 2: 소스와 타겟이 같은 Y축 위치');
       return [];
     }
 
@@ -96,7 +92,6 @@ const calculateEdgePath = ({
     ];
   }
   // 일반적인 연결 & 재연결 중 타겟 노드가 소스 노드보다 왼쪽에 있는 경우 (왼쪽으로 드래그)
-  // console.log('케이스 5: 타겟이 소스보다 왼쪽에 있음');
   return calculateLeftDragCornerPoints({
     fromX,
     fromY,
@@ -186,7 +181,6 @@ const calculateCornerPointsFromSource = ({
   //          |
   // source --
   if (fromX > toX) {
-    console.log('케이스 3-1: 소스가 타겟보다 오른쪽에 있음');
     return [
       { x: middleX, y: fromY },
       { x: middleX, y: toY },
@@ -195,14 +189,12 @@ const calculateCornerPointsFromSource = ({
 
   // 소스가 왼쪽 핸들인 경우
   if (fromPosition === 'left') {
-    console.log('케이스 3-2: 소스가 왼쪽 핸들');
     //  -- target
     // |
     // -------------
     //             |
     //    source --
     if (toNode) {
-      console.log('케이스 3-2-1: 타겟 노드 존재');
       return [
         { x: fromX - offsetX, y: fromY },
         { x: fromX - offsetX, y: middleY },
@@ -212,7 +204,6 @@ const calculateCornerPointsFromSource = ({
     }
 
     // 연결 되기 전
-    console.log('케이스 3-2-2: 타겟 노드 없음');
     //      --target
     //     |
     //     --------------    source
@@ -228,7 +219,6 @@ const calculateCornerPointsFromSource = ({
   //             |
   //    source --
   if (fromPosition === 'right' && toNode) {
-    console.log('케이스 3-3: 소스가 오른쪽 핸들이고 타겟 노드 존재');
     return [
       { x: fromX + offsetX, y: fromY },
       { x: fromX + offsetX, y: middleY },
@@ -236,7 +226,6 @@ const calculateCornerPointsFromSource = ({
       { x: toX + offsetX, y: toY },
     ];
   }
-  console.log('케이스 3-4: 기타 케이스');
   return [];
 };
 
@@ -252,20 +241,25 @@ const calculateLeftDragCornerPoints = ({
   offsetX,
   middleY,
 }: CalculateCornerPointsParams): XYPosition[] => {
+  //  ----------------------
+  // |                     |
+  // --target      source--
   const fromNodeCenterY = fromNode?.position?.y ?? fromY;
   const toNodeCenterY = toNode?.position?.y ?? toY;
-  const verticalDifference = Math.abs(fromNodeCenterY - toNodeCenterY);
+  // Y축 위치 차이 (양수: 타겟이 아래, 음수: 타겟이 위)
+  const yDifference = toNodeCenterY - fromNodeCenterY;
   const fromNodeHeight = fromNode?.measured?.height ?? 0;
+  const offsetY = 10;
+  // 기준 거리 (노드 높이 + 여유공간)
+  const thresholdDistance = fromNodeHeight + 10;
 
-  // yennie: 위로 올라가는 경우에 처리 필요함
-  if (verticalDifference <= fromNodeHeight + 10) {
-    console.log('test');
-    // 노드의 상단 값 계산
+  // 타겟이 소스와 비슷한 높이거나 약간 아래에 있을 때
+  if (yDifference >= 0 && yDifference <= thresholdDistance) {
+    // 윗쪽으로 우회하는 경로 생성
     const nodeY = fromNode?.position?.y ?? fromY;
     const nodeHeight = fromNode?.measured?.height ?? 0;
     const nodeTop = nodeY - nodeHeight / 2;
     const middleY = (fromY + nodeTop) / 2;
-    const offsetY = 10;
     return [
       { x: fromX + offsetX, y: fromY },
       { x: fromX + offsetX, y: middleY - offsetY },
@@ -274,10 +268,18 @@ const calculateLeftDragCornerPoints = ({
     ];
   }
 
-  // source -- target
-  // if (Math.abs(fromY - toY) < 1) {
+  // 타겟이 소스보다 위에 있을 때
+  if (yDifference < 0 && Math.abs(yDifference) <= thresholdDistance) {
+    // 타겟 노드 높이에 맞춘 경로 생성
+    const toNodeY = toNode?.position?.y ?? toY;
+    return [
+      { x: fromX + offsetX, y: fromY },
+      { x: fromX + offsetX, y: toNodeY - offsetY },
+      { x: toX - offsetX, y: toNodeY - offsetY },
+      { x: toX - offsetX, y: toY },
+    ];
+  }
 
-  // }
   //  -- target
   // |
   // -------------

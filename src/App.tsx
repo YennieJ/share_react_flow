@@ -24,7 +24,7 @@ import { ControlPointData, EditableEdge } from './edges/EditableEdge';
 import { ConnectionLine } from './edges/ConnectionLine';
 import { DEFAULT_ALGORITHM, EdgeOptionalYn, EdgeProgressType } from './edges/EditableEdge/constants';
 import { Toolbar } from './components/Toolbar';
-import calculateEdgePath from './edges/edgePathCalculator';
+import calculateEdgeCornerPoints from './edges/edgeCornerPointsCalculator';
 import { LinePointData } from './edges/EditableEdge/path/linear';
 
 const fitViewOptions = { padding: 0.4 };
@@ -74,7 +74,7 @@ export default function EditableEdgeFlow() {
           if (index === -1) return;
 
           const nodeWidth = node.measured?.width ?? 0;
-          const cornerPoints = calculateEdgePath({
+          const cornerPoints = calculateEdgeCornerPoints({
             fromX: node.position.x + nodeWidth,
             fromY: node.position.y + (node.measured?.height ?? 0) / 2,
             toX: toNode.position.x,
@@ -112,7 +112,7 @@ export default function EditableEdgeFlow() {
           }
 
           const sourceNodeWidth = sourceNode.measured?.width ?? 0;
-          const cornerPoints = calculateEdgePath({
+          const cornerPoints = calculateEdgeCornerPoints({
             fromX: sourceNode.position.x + sourceNodeWidth,
             fromY: sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
             toX: node.position.x,

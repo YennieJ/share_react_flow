@@ -5,7 +5,7 @@ import { getPath } from './EditableEdge';
 import { DEFAULT_ALGORITHM } from './EditableEdge/constants';
 import { useAppStore } from '../store';
 import CustomArrow from './CustomArrow';
-import calculateEdgePath from './edgePathCalculator';
+import calculateEdgeCornerPoints from './edgeCornerPointsCalculator';
 // 연결선을 그리는 커스텀 컴포넌트
 // 노드 간의 연결을 시각적으로 표시
 
@@ -30,7 +30,7 @@ export function ConnectionLine({
   const isReconnecting = isReconnectionFromSource !== null;
 
   // 중간 포인트 계산
-  const cornerPoints = calculateEdgePath({
+  const cornerPoints = calculateEdgeCornerPoints({
     fromX,
     fromY,
     toX,

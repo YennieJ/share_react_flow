@@ -6,12 +6,12 @@ export type LinePointData = XYPosition & {
 };
 
 // 경로 포인트 계산 로직을 재사용 가능한 함수로 분리
+// yennie: 하위호환성을 위한 로직임
 function calculatePathPoints(points: (LinePointData | XYPosition)[]) {
   if (points.length < 2) return [];
 
   if (points.length === 2) {
     const [start, end] = points;
-
     // y값이 같은 경우 중간 포인트 없이 직선으로 연결
     if (start.y === end.y) {
       return [start, end];

@@ -11,7 +11,7 @@ interface CalculateConerPointsParams {
   toNode: InternalNode<Node> | null;
   fromNode: InternalNode<Node> | null;
   isActive?: boolean;
-  existingPoints?: XYPosition[];
+  existingCornerPoints?: XYPosition[];
   isSourceNodeMoving?: boolean;
 }
 
@@ -48,25 +48,25 @@ const calculateEdgeCornerPoints = ({
   toNode,
   fromNode,
   isActive = false,
-  existingPoints = [],
+  existingCornerPoints = [],
   isSourceNodeMoving = true,
 }: CalculateConerPointsParams) => {
-  const { isReconnectionFromSource } = useAppStore.getState();
+  const { isSourceHandleReconnecting } = useAppStore.getState();
   const { middleX, middleY } = getCenterPosition(fromX, fromY, toX, toY);
 
   // 활성화된 엣지이고 기존 포인트가 있는 경우
-  if (isActive && existingPoints?.length > 0) {
+  if (isActive && existingCornerPoints?.length > 0) {
     return recalculateActiveCornerPoints({
       fromY,
       toY,
-      existingPoints,
+      existingCornerPoints,
       isSourceNodeMoving,
-      isReconnectionFromSource,
+      isSourceHandleReconnecting,
     });
   }
 
   // 재연결 중이고 소스 노드와 연결된 엣지인 경우
-  if (isReconnectionFromSource) {
+  if (isSourceHandleReconnecting) {
     return recalculateSourceCornerPoints({
       fromX,
       fromY,
@@ -110,41 +110,41 @@ const calculateEdgeCornerPoints = ({
 const recalculateActiveCornerPoints = ({
   fromY,
   toY,
-  existingPoints,
+  existingCornerPoints,
   isSourceNodeMoving,
-  isReconnectionFromSource,
+  isSourceHandleReconnecting,
 }: {
   fromY: number;
   toY: number;
-  existingPoints: XYPosition[];
+  existingCornerPoints: XYPosition[];
   isSourceNodeMoving: boolean;
-  isReconnectionFromSource: boolean | null;
+  isSourceHandleReconnecting: boolean | null;
 }): XYPosition[] => {
-  let newPoints = [...existingPoints];
+  let newCornerPoints = [...existingCornerPoints];
 
   // 소스 노드 이동 중인 경우
   if (isSourceNodeMoving) {
     // 첫 포인트 Y값 업데이트
-    newPoints[0] = { ...newPoints[0], y: fromY };
+    newCornerPoints[0] = { ...newCornerPoints[0], y: fromY };
 
-    if (isReconnectionFromSource) {
-      if (newPoints.length === 2) {
+    if (isSourceHandleReconnecting) {
+      if (newCornerPoints.length === 2) {
         // 간단한 경로인 경우
-        newPoints[1] = { ...newPoints[1], y: toY };
+        newCornerPoints[1] = { ...newCornerPoints[1], y: toY };
       } else {
         // 복잡한 경로는 방향 뒤집기
-        newPoints = [...newPoints].reverse();
-        newPoints[0] = { ...newPoints[0], y: fromY };
-        newPoints[newPoints.length - 1] = { ...newPoints[newPoints.length - 1], y: toY };
+        newCornerPoints = [...newCornerPoints].reverse();
+        newCornerPoints[0] = { ...newCornerPoints[0], y: fromY };
+        newCornerPoints[newCornerPoints.length - 1] = { ...newCornerPoints[newCornerPoints.length - 1], y: toY };
       }
     }
   } else {
     // 타겟 노드 이동 중인 경우, 마지막 포인트만 업데이트
-    const lastIndex = newPoints.length - 1;
-    newPoints[lastIndex] = { ...newPoints[lastIndex], y: toY };
+    const lastIndex = newCornerPoints.length - 1;
+    newCornerPoints[lastIndex] = { ...newCornerPoints[lastIndex], y: toY };
   }
 
-  return newPoints;
+  return newCornerPoints;
 };
 
 // 소스 노드와 연결된 엣지의 코너 포인트를 계산하는 함수

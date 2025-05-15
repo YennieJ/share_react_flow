@@ -1,7 +1,7 @@
 import type { XYPosition } from '@xyflow/react';
 import { useCallback, useRef } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
-import { LinePointData } from './path/linear';
+import { CornerPointData } from './path/linear';
 
 // 컨트롤 포인트의 데이터 타입 정의
 export type ControlPointData = XYPosition & {
@@ -18,7 +18,7 @@ interface ControlPointProps {
   x: number;
   y: number;
   color: string;
-  setEdgeLinePoints: (update: (points: LinePointData[]) => LinePointData[]) => void;
+  updateEdgePath: (update: (points: CornerPointData[]) => CornerPointData[]) => void;
   cornerPoints: {
     before?: { id: string; x: number; y: number };
     after?: { id: string; x: number; y: number };
@@ -26,7 +26,7 @@ interface ControlPointProps {
 }
 
 // 컨트롤 포인트 컴포넌트
-export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints }: ControlPointProps) {
+export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: ControlPointProps) {
   const container = useStore((store) => store.domNode);
   const { screenToFlowPosition } = useReactFlow();
   const ref = useRef<SVGCircleElement>(null);
@@ -37,17 +37,17 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
       e.stopPropagation();
       if (!container) return;
 
-      console.log('컨트롤 포인트 정보:', {
-        id,
-        position: { x, y },
-        cornerPoints,
-        event: {
-          clientX: e.clientX,
-          clientY: e.clientY,
-          button: e.button,
-          type: e.type,
-        },
-      });
+      // console.log('컨트롤 포인트 정보:', {
+      //   id,
+      //   position: { x, y },
+      //   cornerPoints,
+      //   event: {
+      //     clientX: e.clientX,
+      //     clientY: e.clientY,
+      //     button: e.button,
+      //     type: e.type,
+      //   },
+      // });
 
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
@@ -67,7 +67,7 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
         const deltaY = currentFlow.y - prevFlow.y;
         prevClientPos = currentClientPos;
 
-        setEdgeLinePoints((points) => {
+        updateEdgePath((points) => {
           const updatedPoints = [...points];
 
           // before/after 핸들 존재 시 추가
@@ -111,7 +111,7 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
       document.addEventListener('pointermove', handlePointerMove);
       document.addEventListener('pointerup', handlePointerUp, { once: true });
     },
-    [container, cornerPoints, id, screenToFlowPosition, setEdgeLinePoints, x, y],
+    [container, cornerPoints.after, cornerPoints.before, id, screenToFlowPosition, updateEdgePath],
   );
 
   return (
@@ -127,6 +127,7 @@ export function ControlPoint({ id, x, y, setEdgeLinePoints, color, cornerPoints 
       fill="white"
       style={{ pointerEvents: 'all' }}
       onPointerDown={handlePointerDown}
+      // onDoubleClick={() => alert('최단거리 계산해야합니다!')}
     />
   );
 }

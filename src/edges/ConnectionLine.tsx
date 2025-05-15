@@ -21,13 +21,13 @@ export function ConnectionLine({
   fromNode,
 }: ConnectionLineComponentProps) {
   // useAppStore 훅을 사용하여 상태 접근
-  const setConnectionLinePath = useAppStore((state) => state.setConnectionLinePath);
-  const connectionLinePath = useAppStore((state) => state.connectionLinePath);
-  const realPath = useAppStore((state) => state.realPath);
-  const isReconnectionFromSource = useAppStore((state) => state.isReconnectionFromSource);
+  const setDraggingEdgePath = useAppStore((state) => state.setDraggingEdgePath);
+  const draggingEdgePath = useAppStore((state) => state.draggingEdgePath);
+  const savedEdgePath = useAppStore((state) => state.savedEdgePath);
+  const isSourceHandleReconnecting = useAppStore((state) => state.isSourceHandleReconnecting);
   const isEdgeActive = useAppStore((state) => state.isEdgeActive);
   // 리커넥션 중인지 여부 확인
-  const isReconnecting = isReconnectionFromSource !== null;
+  const isReconnecting = isSourceHandleReconnecting !== null;
 
   // 중간 포인트 계산
   const cornerPoints = calculateEdgeCornerPoints({
@@ -40,8 +40,8 @@ export function ConnectionLine({
     toNode,
     fromNode,
     isActive: isEdgeActive, // 리커넥션 중에는 isActive를 true로 전달하여 기존 로직을 활용
-    existingPoints: isReconnecting ? realPath : [], // 리커넥션 중이면 기존 포인트 전달
-    isSourceNodeMoving: isReconnectionFromSource === true, // 소스 노드에서 리커넥션 중인지 여부
+    existingCornerPoints: isReconnecting ? savedEdgePath : [], // 리커넥션 중이면 기존 포인트 전달
+    isSourceNodeMoving: isSourceHandleReconnecting === true, // 소스 노드에서 리커넥션 중인지 여부
   });
 
   // 시작 포인트, 중간 포인트들, 끝 포인트를 포함한 전체 경로 포인트
@@ -52,12 +52,12 @@ export function ConnectionLine({
   // 전역 스토어에 경로 저장
   useEffect(() => {
     // 현재 경로와 이전 경로가 다른 경우에만 업데이트
-    const isPathChanged = JSON.stringify(allPoints) !== JSON.stringify(connectionLinePath);
+    const isPathChanged = JSON.stringify(allPoints) !== JSON.stringify(draggingEdgePath);
 
     if (isPathChanged) {
-      setConnectionLinePath(allPoints);
+      setDraggingEdgePath(allPoints);
     }
-  }, [allPoints, setConnectionLinePath, connectionLinePath]);
+  }, [allPoints, setDraggingEdgePath, draggingEdgePath]);
 
   // 경로 생성
   const path = getPath(allPoints, DEFAULT_ALGORITHM);
@@ -73,8 +73,8 @@ export function ConnectionLine({
         fill="none"
         stroke={'black'}
         d={path}
-        markerStart={isReconnectionFromSource ? `url(#${arrowId})` : ``}
-        markerEnd={isReconnectionFromSource ? `` : `url(#${arrowId})`}
+        markerStart={isSourceHandleReconnecting ? `url(#${arrowId})` : ``}
+        markerEnd={isSourceHandleReconnecting ? `` : `url(#${arrowId})`}
       />
     </g>
   );

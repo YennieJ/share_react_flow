@@ -4,7 +4,7 @@ import css from './CustomNode.module.css';
 import { useAppStore } from '../store';
 
 export function CustomNode() {
-  const isReconnectionFromSource = useAppStore((state) => state.isReconnectionFromSource);
+  const isSourceHandleReconnecting = useAppStore((state) => state.isSourceHandleReconnecting);
 
   return (
     <div className={css.container}>
@@ -12,7 +12,7 @@ export function CustomNode() {
         type="source"
         position={Position.Left}
         isConnectableStart={false}
-        isConnectableEnd={isReconnectionFromSource ? false : true}
+        isConnectableEnd={isSourceHandleReconnecting ? false : true}
         id="left"
         className={css.handle}
       />
@@ -20,7 +20,7 @@ export function CustomNode() {
       <Handle
         type="source"
         position={Position.Right}
-        isConnectableEnd={isReconnectionFromSource ? true : false}
+        isConnectableEnd={isSourceHandleReconnecting ? true : false}
         id="right"
         className={css.handle}
       />

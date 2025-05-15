@@ -1,13 +1,13 @@
 import type { ControlPointData } from '../ControlPoint';
 import type { XYPosition } from '@xyflow/react';
 
-export type LinePointData = XYPosition & {
+export type CornerPointData = XYPosition & {
   id: string;
 };
 
 // 경로 포인트 계산 로직을 재사용 가능한 함수로 분리
 // yennie: 하위호환성을 위한 로직임
-function calculatePathPoints(points: (LinePointData | XYPosition)[]) {
+function legacyPathPointsCalculator(points: (CornerPointData | XYPosition)[]) {
   if (points.length < 2) return [];
 
   if (points.length === 2) {
@@ -40,10 +40,10 @@ function calculatePathPoints(points: (LinePointData | XYPosition)[]) {
 
 // 직선 경로를 생성하는 함수 (수평, 수직선만 허용)
 // points: 직선을 구성하는 포인트 배열
-export function getLinearPath(points: (LinePointData | XYPosition)[]) {
+export function getLinearPath(points: (CornerPointData | XYPosition)[]) {
   if (points.length < 1) return '';
 
-  const pathPoints = calculatePathPoints(points);
+  const pathPoints = legacyPathPointsCalculator(points);
 
   // SVG 경로 시작점 설정
   let path = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
@@ -66,11 +66,11 @@ export function getLinearPath(points: (LinePointData | XYPosition)[]) {
 }
 
 // 직선 경로의 컨트롤 포인트를 계산하는 함수
-export function getLinearControlPoints(points: (LinePointData | XYPosition)[]) {
+export function getLinearControlPoints(points: (CornerPointData | XYPosition)[]) {
   const controlPoints = [] as ControlPointData[];
 
   // calculatePathPoints를 먼저 호출하여 실제 경로 포인트 계산
-  const pathPoints = calculatePathPoints(points);
+  const pathPoints = legacyPathPointsCalculator(points);
 
   // 첫 번째와 마지막 포인트를 제외한 인접 포인트 쌍에 대해 컨트롤 포인트 생성
   for (let i = 1; i < pathPoints.length - 2; i++) {

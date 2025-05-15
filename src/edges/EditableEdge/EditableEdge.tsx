@@ -11,14 +11,8 @@ import {
 
 import { ControlPoint } from './ControlPoint';
 import { getPath, getControlPoints } from './path';
-import {
-  Algorithm,
-  DASHED_STYLE,
-  EDGE_COLORS,
-  EdgeProgressType,
-  EdgeOptionalYn,
-} from './constants';
-import { LinePointData } from './path/linear';
+import { Algorithm, DASHED_STYLE, EDGE_COLORS, EdgeProgressType, EdgeOptionalYn } from './constants';
+import { CornerPointData } from './path/linear';
 import CustomArrow from '../CustomArrow';
 
 // 편집 가능한 엣지의 타입 정의
@@ -26,7 +20,7 @@ export type EditableEdge = Edge<{
   label?: string; // 엣지 레이블
   isActive?: boolean; // 엣지 활성 여부
   algorithm?: Algorithm; // 사용할 알고리즘
-  points: LinePointData[]; // 컨트롤 포인트 배열
+  cornerPoints: CornerPointData[]; // 컨트롤 포인트 배열
   type: EdgeProgressType; // 엣지 타입 (이제 이넘 타입)
   optionalYn: EdgeOptionalYn; // 엣지 선택 여부
 }>;
@@ -41,7 +35,7 @@ export function EditableEdgeComponent({
   target,
   targetX,
   targetY,
-  data = { points: [], type: EdgeProgressType.YES, optionalYn: 'Y' },
+  data = { cornerPoints: [], type: EdgeProgressType.YES, optionalYn: 'Y' },
   ...delegated
 }: EdgeProps<EditableEdge>) {
   // 소스와 타겟 노드의 위치 정보
@@ -63,34 +57,47 @@ export function EditableEdgeComponent({
     return selected || sourceNode.selected || targetNode.selected;
   });
 
+  // const { getEdges } = useReactFlow();
+
+  // // 특정 ID를 가진 엣지를 찾는 함수 추가
+  // const findEdgeById = useCallback(
+  //   (edgeId: string): EditableEdge | undefined => {
+  //     const edges = getEdges();
+  //     return edges.find((edge) => edge.id === edgeId) as EditableEdge | undefined;
+  //   },
+  //   [getEdges],
+  // );
+
   // 컨트롤 포인트를 사용해서, 엣지 라인 포인트 업데이트
-  const setEdgeLinePoints = useCallback(
-    (update: (points: LinePointData[]) => LinePointData[]) => {
+  const updateEdgePath = useCallback(
+    (update: (points: CornerPointData[]) => CornerPointData[]) => {
       setEdges((edges) =>
         edges.map((edge) => {
           if (edge.id !== id) return edge;
           if (!isEditableEdge(edge)) return edge;
 
           // 기존 points 배열에서 업데이트만 적용
-          const updatedPoints = update(edge.data?.points ?? []);
+          const updatedPoints = update(edge.data?.cornerPoints ?? []);
+
+          // console.log(updatedPoints, 'updatedPoints');
 
           const data = {
             ...edge.data,
-            points: updatedPoints,
+            cornerPoints: updatedPoints,
             type: edge.data?.type as EdgeProgressType,
             optionalYn: edge.data?.optionalYn as EdgeOptionalYn,
             isActive: true,
           };
 
           return { ...edge, data };
-        })
+        }),
       );
     },
-    [id, setEdges]
+    [id, setEdges],
   );
 
   // 엣지 경로 생성에 사용될 포인트 배열
-  const pathPoints = [sourceOrigin, ...data.points, targetOrigin];
+  const pathPoints = [sourceOrigin, ...data.cornerPoints, targetOrigin];
 
   // 컨트롤 포인트 계산
   const controlPoints = getControlPoints(pathPoints, data.algorithm);
@@ -119,7 +126,7 @@ export function EditableEdgeComponent({
           <ControlPoint
             {...point}
             key={point.id}
-            setEdgeLinePoints={setEdgeLinePoints}
+            updateEdgePath={updateEdgePath}
             color={color}
             cornerPoints={point.cornerPoints}
           />
@@ -129,5 +136,4 @@ export function EditableEdgeComponent({
 }
 
 // 엣지가 편집 가능한 엣지인지 확인하는 타입 가드
-const isEditableEdge = (edge: Edge): edge is EditableEdge =>
-  edge.type === 'editable-edge';
+const isEditableEdge = (edge: Edge): edge is EditableEdge => edge.type === 'editable-edge';

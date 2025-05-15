@@ -25,7 +25,7 @@ import { ConnectionLine } from './edges/ConnectionLine';
 import { DEFAULT_ALGORITHM, EdgeOptionalYn, EdgeProgressType } from './edges/EditableEdge/constants';
 import { Toolbar } from './components/Toolbar';
 import calculateEdgeCornerPoints from './edges/edgeCornerPointsCalculator';
-import { LinePointData } from './edges/EditableEdge/path/linear';
+import { CornerPointData } from './edges/EditableEdge/path/linear';
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -47,12 +47,12 @@ export default function EditableEdgeFlow() {
       let edgesChanged = false;
 
       // 공통 함수: edge 업데이트 로직 통합
-      const updateEdge = (edge: EditableEdge, newPoints: LinePointData[], index: number) => {
+      const updateEdge = (edge: EditableEdge, newPoints: CornerPointData[], index: number) => {
         const updatedEdge = {
           ...edge,
           data: {
             ...edge.data,
-            points: newPoints,
+            cornerPoints: newPoints,
             type: edge.data?.type || EdgeProgressType.YES,
             optionalYn: edge.data?.optionalYn || 'N',
           },
@@ -84,16 +84,16 @@ export default function EditableEdgeFlow() {
             toNode: toNode as InternalNode,
             fromNode: node as InternalNode,
             isActive: edge.data?.isActive,
-            existingPoints: edge.data?.points,
+            existingCornerPoints: edge.data?.cornerPoints,
             isSourceNodeMoving: true,
           });
 
-          const newPoints = cornerPoints.map((point, i) => ({
+          const newCornerPoints = cornerPoints.map((point, i) => ({
             ...point,
-            id: edge.data?.points?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+            id: edge.data?.cornerPoints?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
           }));
 
-          edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          edgesChanged = updateEdge(edge, newCornerPoints, index) || edgesChanged;
         });
 
       // 타겟 노드 처리
@@ -107,7 +107,7 @@ export default function EditableEdgeFlow() {
           if (index === -1) return;
 
           // 타겟 노드가 이동 중일 때 points가 없으면 처리하지 않음
-          if (edge.data?.isActive && (!edge.data?.points || edge.data.points.length === 0)) {
+          if (edge.data?.isActive && (!edge.data?.cornerPoints || edge.data.cornerPoints.length === 0)) {
             return;
           }
 
@@ -122,16 +122,16 @@ export default function EditableEdgeFlow() {
             toNode: node as InternalNode,
             fromNode: sourceNode as InternalNode,
             isActive: edge.data?.isActive,
-            existingPoints: edge.data?.points,
+            existingCornerPoints: edge.data?.cornerPoints,
             isSourceNodeMoving: false,
           });
 
-          const newPoints = cornerPoints.map((point, i) => ({
+          const newCornerPoints = cornerPoints.map((point, i) => ({
             ...point,
-            id: edge.data?.points?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
+            id: edge.data?.cornerPoints?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
           }));
 
-          edgesChanged = updateEdge(edge, newPoints, index) || edgesChanged;
+          edgesChanged = updateEdge(edge, newCornerPoints, index) || edgesChanged;
         });
 
       if (edgesChanged) {
@@ -143,8 +143,8 @@ export default function EditableEdgeFlow() {
 
   const onConnect: OnConnect = useCallback(
     (connection) => {
-      const { connectionLinePath } = useAppStore.getState();
-      const cornerPoints = connectionLinePath.slice(1, -1);
+      const { draggingEdgePath } = useAppStore.getState();
+      const cornerPoints = draggingEdgePath.slice(1, -1);
 
       // 선택된 기본 알고리즘을 기반으로 새 엣지 생성
       // 연결 생성 중 사용자가 추가한 모든 컨트롤 포인트를 전송
@@ -158,7 +158,7 @@ export default function EditableEdgeFlow() {
         data: {
           isActive: false,
           algorithm: DEFAULT_ALGORITHM,
-          points: cornerPoints.map(
+          cornerPoints: cornerPoints.map(
             (point, index) =>
               ({
                 ...point,
@@ -176,10 +176,10 @@ export default function EditableEdgeFlow() {
 
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      const { connectionLinePath, isReconnectionFromSource } = useAppStore.getState();
-      let cornerPoints = connectionLinePath.slice(1, -1);
+      const { draggingEdgePath, isSourceHandleReconnecting } = useAppStore.getState();
+      let cornerPoints = draggingEdgePath.slice(1, -1);
       // 타겟 핸들에서 리커넥트하는 경우 미들 포인트 순서 반대로 설정
-      if (isReconnectionFromSource) {
+      if (isSourceHandleReconnecting) {
         cornerPoints = cornerPoints.reverse();
       }
       setEdges((els) => {
@@ -193,7 +193,7 @@ export default function EditableEdgeFlow() {
               ...e,
               data: {
                 ...oldEdge.data, // 기존 데이터 보존
-                points: cornerPoints.map(
+                cornerPoints: cornerPoints.map(
                   (point, index) =>
                     ({
                       ...point,
@@ -211,19 +211,20 @@ export default function EditableEdgeFlow() {
     },
     [setEdges],
   );
-  const { setIsReconnectionFrommSource, setIsEdgeActive, setRealPath } = useAppStore();
+  const { setIsSourceHandleReconnecting, setIsEdgeActive, setSavedEdgePath } = useAppStore();
 
   return (
     <ReactFlow
       onReconnectStart={(event, edge, handleType) => {
         // 현재 재연결 중인 핸들 타입 저장
-        setIsReconnectionFrommSource(handleType === 'target');
+        setIsSourceHandleReconnecting(handleType === 'target');
         setIsEdgeActive(edge.data?.isActive || false);
-        setRealPath(edge.data?.points || []); // 실제 연결선 경로 저장
+        console.log('onReconnectStart', edge.data?.isActive);
+        setSavedEdgePath(edge.data?.cornerPoints || []); // 실제 연결선 경로 저장
       }}
       onReconnectEnd={() => {
         // 재연결 작업 종료 시 핸들 타입 상태 재설정
-        setIsReconnectionFrommSource(null);
+        setIsSourceHandleReconnecting(null);
         setIsEdgeActive(false);
       }}
       className="validationflow"

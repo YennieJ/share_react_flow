@@ -24,3 +24,6 @@ export type EdgeOptionalYn = 'Y' | 'N';
 
 // 점선 스타일
 export const DASHED_STYLE = '5,5';
+
+// 엣지 정렬 허용 오차
+export const EDGE_ALIGNMENT_TOLERANCE = 1;

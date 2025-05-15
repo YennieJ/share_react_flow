@@ -2,6 +2,7 @@ import type { XYPosition } from '@xyflow/react';
 import { useCallback, useRef } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
 import { EdgePointData } from './path/linear';
+import { EDGE_ALIGNMENT_TOLERANCE } from './constants';
 
 // 컨트롤 포인트의 데이터 타입 정의
 export type ControlPointData = XYPosition & {
@@ -103,7 +104,7 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
           const xDeviation = maxX - minX;
 
           // 수직 정렬 조건: x 좌표 편차가 1 이하
-          if (xDeviation <= 1) {
+          if (xDeviation <= EDGE_ALIGNMENT_TOLERANCE) {
             // 원래 포인트들 저장
             const setVerticallyAlignedPoints = (points: EdgePointData[]) => {
               // x 좌표 평균 계산

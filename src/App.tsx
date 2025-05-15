@@ -22,7 +22,12 @@ import { initialNodes, nodeTypes, initialEdges, edgeTypes } from './initialEleme
 import { useAppStore } from './store';
 import { ControlPointData, EditableEdge } from './edges/EditableEdge';
 import { ConnectionLine } from './edges/ConnectionLine';
-import { DEFAULT_ALGORITHM, EdgeOptionalYn, EdgeProgressType } from './edges/EditableEdge/constants';
+import {
+  DEFAULT_ALGORITHM,
+  EdgeOptionalYn,
+  EdgeProgressType,
+  EDGE_ALIGNMENT_TOLERANCE,
+} from './edges/EditableEdge/constants';
 import { Toolbar } from './components/Toolbar';
 import calculateEdgeCornerPoints from './edges/edgeCornerPointsCalculator';
 import { EdgePointData } from './edges/EditableEdge/path/linear';
@@ -40,60 +45,80 @@ export default function EditableEdgeFlow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
   // console.log(edges);
 
+  // 코너 포인트 ID 생성 유틸리티 함수
+  const generatePointId = (index: number) => `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`;
+
+  // 코너 포인트 생성 함수 추출
+  const createCornerPoints = useCallback(
+    (
+      sourceNode: Node,
+      targetNode: Node,
+      existingPoints: EdgePointData[] | undefined,
+      isSourceMoving: boolean,
+      isActive: boolean | undefined,
+    ) => {
+      const sourceNodeWidth = sourceNode.measured?.width ?? 0;
+      const points = calculateEdgeCornerPoints({
+        fromX: sourceNode.position.x + sourceNodeWidth,
+        fromY: sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
+        toX: targetNode.position.x,
+        toY: targetNode.position.y + (targetNode.measured?.height ?? 0) / 2,
+        fromPosition: Position.Right,
+        toPosition: Position.Left,
+        toNode: targetNode as InternalNode,
+        fromNode: sourceNode as InternalNode,
+        isActive,
+        existingCornerPoints: existingPoints,
+        isSourceNodeMoving: isSourceMoving,
+      });
+
+      return points.map((point, i) => ({
+        ...point,
+        id: existingPoints?.[i]?.id || generatePointId(i),
+      }));
+    },
+    [],
+  );
+
+  // Edge 업데이트 유틸리티 함수
+  const updateEdgeWithPoints = useCallback((edge: EditableEdge, newPoints: EdgePointData[]) => {
+    return {
+      ...edge,
+      data: {
+        ...edge.data,
+        cornerPoints: newPoints,
+        type: edge.data?.type || EdgeProgressType.YES,
+        optionalYn: edge.data?.optionalYn || 'N',
+      },
+    };
+  }, []);
+
   const onNodeDrag = useCallback(
     (_, node: Node) => {
       const nodeId = node.id;
       const updatedEdges = [...edges];
       let edgesChanged = false;
 
-      // 공통 함수: edge 업데이트 로직 통합
-      const updateEdge = (edge: EditableEdge, newPoints: EdgePointData[], index: number) => {
-        const updatedEdge = {
-          ...edge,
-          data: {
-            ...edge.data,
-            cornerPoints: newPoints,
-            type: edge.data?.type || EdgeProgressType.YES,
-            optionalYn: edge.data?.optionalYn || 'N',
-          },
-        };
-
-        updatedEdges[index] = updatedEdge;
-        return true;
-      };
-
       // 소스 노드 처리
       edges
         .filter((edge) => edge.source === nodeId)
         .forEach((edge) => {
-          const toNode = nodes.find((n) => n.id === edge.target);
-
-          if (!toNode) return;
+          const targetNode = nodes.find((n) => n.id === edge.target);
+          if (!targetNode) return;
 
           const index = updatedEdges.findIndex((e) => e.id === edge.id);
           if (index === -1) return;
 
-          const nodeWidth = node.measured?.width ?? 0;
-          const cornerPoints = calculateEdgeCornerPoints({
-            fromX: node.position.x + nodeWidth,
-            fromY: node.position.y + (node.measured?.height ?? 0) / 2,
-            toX: toNode.position.x,
-            toY: toNode.position.y + (toNode.measured?.height ?? 0) / 2,
-            fromPosition: Position.Right,
-            toPosition: Position.Left,
-            toNode: toNode as InternalNode,
-            fromNode: node as InternalNode,
-            isActive: edge.data?.isActive,
-            existingCornerPoints: edge.data?.cornerPoints,
-            isSourceNodeMoving: true,
-          });
+          const newCornerPoints = createCornerPoints(
+            node,
+            targetNode,
+            edge.data?.cornerPoints,
+            true,
+            edge.data?.isActive,
+          );
 
-          const newCornerPoints = cornerPoints.map((point, i) => ({
-            ...point,
-            id: edge.data?.cornerPoints?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
-          }));
-
-          edgesChanged = updateEdge(edge, newCornerPoints, index) || edgesChanged;
+          updatedEdges[index] = updateEdgeWithPoints(edge, newCornerPoints);
+          edgesChanged = true;
         });
 
       // 타겟 노드 처리
@@ -111,34 +136,93 @@ export default function EditableEdgeFlow() {
             return;
           }
 
-          const sourceNodeWidth = sourceNode.measured?.width ?? 0;
-          const cornerPoints = calculateEdgeCornerPoints({
-            fromX: sourceNode.position.x + sourceNodeWidth,
-            fromY: sourceNode.position.y + (sourceNode.measured?.height ?? 0) / 2,
-            toX: node.position.x,
-            toY: node.position.y + (node.measured?.height ?? 0) / 2,
-            fromPosition: Position.Right,
-            toPosition: Position.Left,
-            toNode: node as InternalNode,
-            fromNode: sourceNode as InternalNode,
-            isActive: edge.data?.isActive,
-            existingCornerPoints: edge.data?.cornerPoints,
-            isSourceNodeMoving: false,
-          });
+          const newCornerPoints = createCornerPoints(
+            sourceNode,
+            node,
+            edge.data?.cornerPoints,
+            false,
+            edge.data?.isActive,
+          );
 
-          const newCornerPoints = cornerPoints.map((point, i) => ({
-            ...point,
-            id: edge.data?.cornerPoints?.[i]?.id || `corner-${i}-${window.crypto.randomUUID().substring(0, 8)}`,
-          }));
-
-          edgesChanged = updateEdge(edge, newCornerPoints, index) || edgesChanged;
+          updatedEdges[index] = updateEdgeWithPoints(edge, newCornerPoints);
+          edgesChanged = true;
         });
 
       if (edgesChanged) {
         setEdges(updatedEdges);
       }
     },
-    [edges, setEdges, nodes],
+    [edges, setEdges, nodes, createCornerPoints, updateEdgeWithPoints],
+  );
+
+  // 엣지 포인트 정리 함수
+  const cleanupAlignedPoints = useCallback((edge: EditableEdge, isSource: boolean) => {
+    if (!edge.data?.cornerPoints || edge.data.cornerPoints.length < 2) return null;
+
+    const cornerPoints = [...edge.data.cornerPoints];
+    let newCornerPoints = null;
+
+    if (isSource) {
+      // 소스 노드: 첫 번째와 두 번째 포인트 확인
+      const firstPoint = cornerPoints[0];
+      const secondPoint = cornerPoints[1];
+
+      if (Math.abs(firstPoint.y - secondPoint.y) <= EDGE_ALIGNMENT_TOLERANCE) {
+        newCornerPoints = cornerPoints.slice(2);
+      }
+    } else {
+      // 타겟 노드: 마지막과 마지막 전 포인트 확인
+      const lastIndex = cornerPoints.length - 1;
+      const lastPoint = cornerPoints[lastIndex];
+      const secondLastPoint = cornerPoints[lastIndex - 1];
+
+      if (Math.abs(lastPoint.y - secondLastPoint.y) <= EDGE_ALIGNMENT_TOLERANCE) {
+        newCornerPoints = cornerPoints.slice(0, -2);
+      }
+    }
+
+    return newCornerPoints;
+  }, []);
+
+  const onNodeDragStop = useCallback(
+    (_, node: Node) => {
+      const nodeId = node.id;
+      let hasChanges = false;
+      const updatedEdges = [...edges];
+
+      // 타겟 노드에 연결된 엣지 처리
+      edges
+        .filter((edge) => edge.target === nodeId)
+        .forEach((edge) => {
+          const newCornerPoints = cleanupAlignedPoints(edge, false);
+          if (newCornerPoints !== null) {
+            const index = updatedEdges.findIndex((e) => e.id === edge.id);
+            if (index !== -1) {
+              updatedEdges[index] = updateEdgeWithPoints(edge, newCornerPoints);
+              hasChanges = true;
+            }
+          }
+        });
+
+      // 소스 노드에 연결된 엣지 처리
+      edges
+        .filter((edge) => edge.source === nodeId)
+        .forEach((edge) => {
+          const newCornerPoints = cleanupAlignedPoints(edge, true);
+          if (newCornerPoints !== null) {
+            const index = updatedEdges.findIndex((e) => e.id === edge.id);
+            if (index !== -1) {
+              updatedEdges[index] = updateEdgeWithPoints(edge, newCornerPoints);
+              hasChanges = true;
+            }
+          }
+        });
+
+      if (hasChanges) {
+        setEdges(updatedEdges);
+      }
+    },
+    [edges, setEdges, cleanupAlignedPoints, updateEdgeWithPoints],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -146,15 +230,12 @@ export default function EditableEdgeFlow() {
       const { draggingEdgePath } = useAppStore.getState();
       const cornerPoints = draggingEdgePath.slice(1, -1);
 
-      // 선택된 기본 알고리즘을 기반으로 새 엣지 생성
-      // 연결 생성 중 사용자가 추가한 모든 컨트롤 포인트를 전송
       const edge: EditableEdge = {
         ...connection,
         id: `${Date.now()}-${connection.source}-${connection.target}`,
         type: 'editable-edge',
         selected: true,
         reconnectable: true,
-
         data: {
           isActive: false,
           algorithm: DEFAULT_ALGORITHM,
@@ -162,7 +243,7 @@ export default function EditableEdgeFlow() {
             (point, index) =>
               ({
                 ...point,
-                id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
+                id: generatePointId(index),
               } as ControlPointData),
           ),
           type: EdgeProgressType.YES,
@@ -178,26 +259,26 @@ export default function EditableEdgeFlow() {
     (oldEdge: Edge, newConnection: Connection) => {
       const { draggingEdgePath, isSourceHandleReconnecting } = useAppStore.getState();
       let cornerPoints = draggingEdgePath.slice(1, -1);
+
       // 타겟 핸들에서 리커넥트하는 경우 미들 포인트 순서 반대로 설정
       if (isSourceHandleReconnecting) {
         cornerPoints = cornerPoints.reverse();
       }
+
       setEdges((els) => {
-        // 기존 엣지 데이터와 새 연결 정보 결합
         const reconnectedEdges = reconnectEdge(oldEdge, newConnection, els);
-        // 새로 생성된 엣지 찾기 (일반적으로 새 연결 정보와 소스/타겟이 일치하는 엣지)
+
         return reconnectedEdges.map((e) => {
-          // 새로 생성된 엣지 (소스와 타겟이 newConnection과 일치)
           if (e.source === newConnection.source && e.target === newConnection.target) {
             return {
               ...e,
               data: {
-                ...oldEdge.data, // 기존 데이터 보존
+                ...oldEdge.data,
                 cornerPoints: cornerPoints.map(
                   (point, index) =>
                     ({
                       ...point,
-                      id: `corner-${index}-${window.crypto.randomUUID().substring(0, 8)}`,
+                      id: generatePointId(index),
                     } as ControlPointData),
                 ),
                 type: oldEdge.data?.type as EdgeProgressType,
@@ -235,6 +316,7 @@ export default function EditableEdgeFlow() {
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       onNodeDrag={onNodeDrag}
+      onNodeDragStop={onNodeDragStop}
       onReconnect={onReconnect}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}

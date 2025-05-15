@@ -57,33 +57,20 @@ export function EditableEdgeComponent({
     return selected || sourceNode.selected || targetNode.selected;
   });
 
-  // const { getEdges } = useReactFlow();
-
-  // // 특정 ID를 가진 엣지를 찾는 함수 추가
-  // const findEdgeById = useCallback(
-  //   (edgeId: string): EditableEdge | undefined => {
-  //     const edges = getEdges();
-  //     return edges.find((edge) => edge.id === edgeId) as EditableEdge | undefined;
-  //   },
-  //   [getEdges],
-  // );
-
   // 컨트롤 포인트를 사용해서, 엣지 라인 포인트 업데이트
   const updateEdgePath = useCallback(
-    (update: (points: CornerPointData[]) => CornerPointData[]) => {
+    (update: (cornerPoints: CornerPointData[]) => CornerPointData[]) => {
       setEdges((edges) =>
         edges.map((edge) => {
           if (edge.id !== id) return edge;
           if (!isEditableEdge(edge)) return edge;
 
           // 기존 points 배열에서 업데이트만 적용
-          const updatedPoints = update(edge.data?.cornerPoints ?? []);
-
-          // console.log(updatedPoints, 'updatedPoints');
+          const updatedCornerPoints = update(edge.data?.cornerPoints ?? []);
 
           const data = {
             ...edge.data,
-            cornerPoints: updatedPoints,
+            cornerPoints: updatedCornerPoints,
             type: edge.data?.type as EdgeProgressType,
             optionalYn: edge.data?.optionalYn as EdgeOptionalYn,
             isActive: true,

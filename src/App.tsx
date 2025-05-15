@@ -219,7 +219,6 @@ export default function EditableEdgeFlow() {
         // 현재 재연결 중인 핸들 타입 저장
         setIsSourceHandleReconnecting(handleType === 'target');
         setIsEdgeActive(edge.data?.isActive || false);
-        console.log('onReconnectStart', edge.data?.isActive);
         setSavedEdgePath(edge.data?.cornerPoints || []); // 실제 연결선 경로 저장
       }}
       onReconnectEnd={() => {

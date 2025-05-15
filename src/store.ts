@@ -1,9 +1,6 @@
 import { create } from 'zustand';
 import { type XYPosition } from '@xyflow/react';
 
-// 전역 상태 관리 인터페이스 정의
-// 연결선을 그리는 동안 추가된 컨트롤 포인트를
-// 새로운 엣지 생성 시 전달하기 위해 필요
 interface AppState {
   isEdgeActive: boolean; // 엣지가 활성화되어 있는지 여부
   setIsEdgeActive: (isEdgeActive: boolean) => void; // 엣지 활성화 여부 설정 함수

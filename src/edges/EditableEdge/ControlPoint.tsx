@@ -37,18 +37,6 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
       e.stopPropagation();
       if (!container) return;
 
-      // console.log('컨트롤 포인트 정보:', {
-      //   id,
-      //   position: { x, y },
-      //   cornerPoints,
-      //   event: {
-      //     clientX: e.clientX,
-      //     clientY: e.clientY,
-      //     button: e.button,
-      //     type: e.type,
-      //   },
-      // });
-
       const initialClientPos = { x: e.clientX, y: e.clientY };
       let prevClientPos = initialClientPos;
 
@@ -65,6 +53,7 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
 
         const deltaX = currentFlow.x - prevFlow.x;
         const deltaY = currentFlow.y - prevFlow.y;
+
         prevClientPos = currentClientPos;
 
         updateEdgePath((points) => {
@@ -80,12 +69,10 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
             if (!exists) updatedPoints.push({ ...cornerPoints.after! });
           }
 
-          return updatedPoints.map((point) => {
+          const result = updatedPoints.map((point) => {
             // 메인 드래그 포인트
             if (point.id === id) {
-              return isHorizontal
-                ? { ...point, y: point.y + deltaY } // 가로선 → Y만
-                : { ...point, x: point.x + deltaX }; // 세로선 → X만
+              return isHorizontal ? { ...point, y: point.y + deltaY } : { ...point, x: point.x + deltaX };
             }
 
             // before 핸들
@@ -100,10 +87,41 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
 
             return point;
           });
+
+          // 드래그 중에는 모든 포인트 그대로 유지
+          return result;
         });
       };
 
       const handlePointerUp = () => {
+        // 포인터 업 시점에 x 좌표 편차 확인하여 수직 정렬 적용
+        updateEdgePath((points) => {
+          // x값들의 오차 범위 확인
+          const xValues = points.map((point) => point.x);
+          const minX = Math.min(...xValues);
+          const maxX = Math.max(...xValues);
+          const xDeviation = maxX - minX;
+
+          // 수직 정렬 조건: x 좌표 편차가 1 이하
+          if (xDeviation <= 1) {
+            // 원래 포인트들 저장
+            const setVerticallyAlignedPoints = (points: CornerPointData[]) => {
+              // x 좌표 평균 계산
+              const avgX = xValues.reduce((sum, x) => sum + x, 0) / xValues.length;
+
+              // 첫 번째와 마지막 포인트만 남기고 x 좌표를 평균으로 설정
+              const firstPoint = { ...points[0], x: avgX };
+              const lastPoint = { ...points[points.length - 1], x: avgX };
+
+              return [firstPoint, lastPoint];
+            };
+
+            return setVerticallyAlignedPoints(points);
+          }
+
+          return points;
+        });
+
         document.removeEventListener('pointermove', handlePointerMove);
         document.removeEventListener('pointerup', handlePointerUp);
       };

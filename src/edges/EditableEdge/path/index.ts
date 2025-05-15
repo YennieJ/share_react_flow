@@ -1,7 +1,7 @@
 import { type XYPosition } from '@xyflow/react';
 import type { ControlPointData } from '../ControlPoint';
 
-import { getLinearPath, getLinearControlPoints } from './linear';
+import { getSmoothElbowPath, getLinearControlPoints } from './linear';
 import { Algorithm } from '../constants';
 
 // 주어진 알고리즘에 따라 컨트롤 포인트를 계산하는 함수
@@ -24,6 +24,6 @@ export function getPath(points: XYPosition[], algorithm: Algorithm = Algorithm.L
   switch (algorithm) {
     // 직선 경로 생성
     case Algorithm.Linear:
-      return getLinearPath(points);
+      return getSmoothElbowPath(points);
   }
 }

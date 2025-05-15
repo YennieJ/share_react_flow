@@ -12,7 +12,7 @@ import {
 import { ControlPoint } from './ControlPoint';
 import { getPath, getControlPoints } from './path';
 import { Algorithm, DASHED_STYLE, EDGE_COLORS, EdgeProgressType, EdgeOptionalYn } from './constants';
-import { CornerPointData } from './path/linear';
+import { EdgePointData } from './path/linear';
 import CustomArrow from '../CustomArrow';
 
 // 편집 가능한 엣지의 타입 정의
@@ -20,7 +20,7 @@ export type EditableEdge = Edge<{
   label?: string; // 엣지 레이블
   isActive?: boolean; // 엣지 활성 여부
   algorithm?: Algorithm; // 사용할 알고리즘
-  cornerPoints: CornerPointData[]; // 컨트롤 포인트 배열
+  cornerPoints: EdgePointData[]; // 컨트롤 포인트 배열
   type: EdgeProgressType; // 엣지 타입 (이제 이넘 타입)
   optionalYn: EdgeOptionalYn; // 엣지 선택 여부
 }>;
@@ -59,7 +59,7 @@ export function EditableEdgeComponent({
 
   // 컨트롤 포인트를 사용해서, 엣지 라인 포인트 업데이트
   const updateEdgePath = useCallback(
-    (update: (cornerPoints: CornerPointData[]) => CornerPointData[]) => {
+    (update: (cornerPoints: EdgePointData[]) => EdgePointData[]) => {
       setEdges((edges) =>
         edges.map((edge) => {
           if (edge.id !== id) return edge;

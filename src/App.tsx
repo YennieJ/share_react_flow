@@ -25,7 +25,7 @@ import { ConnectionLine } from './edges/ConnectionLine';
 import { DEFAULT_ALGORITHM, EdgeOptionalYn, EdgeProgressType } from './edges/EditableEdge/constants';
 import { Toolbar } from './components/Toolbar';
 import calculateEdgeCornerPoints from './edges/edgeCornerPointsCalculator';
-import { CornerPointData } from './edges/EditableEdge/path/linear';
+import { EdgePointData } from './edges/EditableEdge/path/linear';
 
 const fitViewOptions = { padding: 0.4 };
 
@@ -47,7 +47,7 @@ export default function EditableEdgeFlow() {
       let edgesChanged = false;
 
       // 공통 함수: edge 업데이트 로직 통합
-      const updateEdge = (edge: EditableEdge, newPoints: CornerPointData[], index: number) => {
+      const updateEdge = (edge: EditableEdge, newPoints: EdgePointData[], index: number) => {
         const updatedEdge = {
           ...edge,
           data: {

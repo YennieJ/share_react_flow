@@ -28,8 +28,8 @@ interface BasePositionParams {
 }
 
 // 기본 상수 정의
-const OFFSET_X = 10;
-const OFFSET_Y = 10;
+const OFFSET_X = 13;
+const OFFSET_Y = 13;
 const THRESHOLD_DISTANCE_FACTOR = 10; // 노드 높이 + 여유공간 계산에 사용
 
 // 미들포인트 계산 헬퍼 함수
@@ -336,6 +336,7 @@ const calculateLeftwardCornerPoints = ({
   return [
     { x: fromX + OFFSET_X, y: fromY },
     { x: fromX + OFFSET_X, y: middleY },
+    { x: toX, y: middleY },
   ];
 };
 

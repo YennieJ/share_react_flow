@@ -1,7 +1,7 @@
 import type { XYPosition } from '@xyflow/react';
 import { useCallback, useRef } from 'react';
 import { useReactFlow, useStore } from '@xyflow/react';
-import { CornerPointData } from './path/linear';
+import { EdgePointData } from './path/linear';
 
 // 컨트롤 포인트의 데이터 타입 정의
 export type ControlPointData = XYPosition & {
@@ -18,7 +18,7 @@ interface ControlPointProps {
   x: number;
   y: number;
   color: string;
-  updateEdgePath: (update: (points: CornerPointData[]) => CornerPointData[]) => void;
+  updateEdgePath: (update: (points: EdgePointData[]) => EdgePointData[]) => void;
   cornerPoints: {
     before?: { id: string; x: number; y: number };
     after?: { id: string; x: number; y: number };
@@ -105,7 +105,7 @@ export function ControlPoint({ id, x, y, updateEdgePath, color, cornerPoints }: 
           // 수직 정렬 조건: x 좌표 편차가 1 이하
           if (xDeviation <= 1) {
             // 원래 포인트들 저장
-            const setVerticallyAlignedPoints = (points: CornerPointData[]) => {
+            const setVerticallyAlignedPoints = (points: EdgePointData[]) => {
               // x 좌표 평균 계산
               const avgX = xValues.reduce((sum, x) => sum + x, 0) / xValues.length;
 

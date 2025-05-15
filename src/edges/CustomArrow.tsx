@@ -10,13 +10,13 @@ export default function CustomArrow({ id, color, strokeWidth }: { id: string; co
       refX="0"
       refY="0"
     >
-      <polyline
+      <polygon
         stroke={color}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={strokeWidth}
-        fill="none"
-        points="-7,-6 0,0 -7,6"
+        fill={color}
+        points="0,0 -8,5 -8,-5"
       />
     </marker>
   );

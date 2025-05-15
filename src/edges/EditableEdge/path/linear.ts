@@ -1,13 +1,13 @@
 import type { ControlPointData } from '../ControlPoint';
 import type { XYPosition } from '@xyflow/react';
 
-export type CornerPointData = XYPosition & {
+export type EdgePointData = XYPosition & {
   id: string;
 };
 
 // 경로 포인트 계산 로직을 재사용 가능한 함수로 분리
 // yennie: 하위호환성을 위한 로직임
-function legacyPathPointsCalculator(points: (CornerPointData | XYPosition)[]) {
+function legacyPathPointsCalculator(points: (EdgePointData | XYPosition)[]) {
   if (points.length < 2) return [];
 
   if (points.length === 2) {
@@ -38,35 +38,61 @@ function legacyPathPointsCalculator(points: (CornerPointData | XYPosition)[]) {
   return points;
 }
 
-// 직선 경로를 생성하는 함수 (수평, 수직선만 허용)
-// points: 직선을 구성하는 포인트 배열
-export function getLinearPath(points: (CornerPointData | XYPosition)[]) {
+const CORNER_RADIUS = 5; // 모서리 반경 설정
+
+// 굴곡진 직선 경로를 생성하는 함수 (수평, 수직선만 허용)
+export function getSmoothElbowPath(points: (EdgePointData | XYPosition)[]) {
   if (points.length < 1) return '';
 
-  const pathPoints = legacyPathPointsCalculator(points);
+  const rawPathPoints = legacyPathPointsCalculator(points);
 
-  // SVG 경로 시작점 설정
+  // 중복된 연속 좌표 제거 (예: x, y 동일한 연속 포인트)
+  const pathPoints = rawPathPoints.filter((p, i, arr) => {
+    if (i === 0) return true;
+    const prev = arr[i - 1];
+    return p.x !== prev.x || p.y !== prev.y;
+  });
+
+  if (pathPoints.length < 2) return '';
+
   let path = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
 
-  // 각 포인트를 수평 또는 수직선으로 연결
-  for (let i = 1; i < pathPoints.length; i++) {
+  for (let i = 1; i < pathPoints.length - 1; i++) {
     const prev = pathPoints[i - 1];
-    const current = pathPoints[i];
+    const curr = pathPoints[i];
+    const next = pathPoints[i + 1];
 
-    // 수평선과 수직선 처리 통합
-    if (prev.x !== current.x) {
-      path += ` L ${current.x} ${prev.y}`;
-    }
-    if (prev.y !== current.y) {
-      path += ` L ${current.x} ${current.y}`;
-    }
+    const dx1 = curr.x - prev.x;
+    const dy1 = curr.y - prev.y;
+    const dx2 = next.x - curr.x;
+    const dy2 = next.y - curr.y;
+
+    const len1 = Math.sqrt(dx1 ** 2 + dy1 ** 2);
+    const len2 = Math.sqrt(dx2 ** 2 + dy2 ** 2);
+
+    const offset1 = Math.min(CORNER_RADIUS, len1 / 2);
+    const offset2 = Math.min(CORNER_RADIUS, len2 / 2);
+
+    const startX = curr.x - (dx1 / len1) * offset1;
+    const startY = curr.y - (dy1 / len1) * offset1;
+    const endX = curr.x + (dx2 / len2) * offset2;
+    const endY = curr.y + (dy2 / len2) * offset2;
+
+    path += ` L ${startX} ${startY} Q ${curr.x} ${curr.y} ${endX} ${endY}`;
+  }
+
+  // 마지막 포인트로 직선 연결 (중복된 좌표가 아닌 경우에만)
+  const last = pathPoints[pathPoints.length - 1];
+  const secondLast = pathPoints[pathPoints.length - 2];
+  if (last.x !== secondLast.x || last.y !== secondLast.y) {
+    path += ` L ${last.x} ${last.y}`;
   }
 
   return path;
 }
 
 // 직선 경로의 컨트롤 포인트를 계산하는 함수
-export function getLinearControlPoints(points: (CornerPointData | XYPosition)[]) {
+export function getLinearControlPoints(points: (EdgePointData | XYPosition)[]) {
   const controlPoints = [] as ControlPointData[];
 
   // calculatePathPoints를 먼저 호출하여 실제 경로 포인트 계산

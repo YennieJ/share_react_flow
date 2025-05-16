@@ -43,6 +43,8 @@ const isValidConnection = (connection: Connection | EditableEdge) => {
 export default function EditableEdgeFlow() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<EditableEdge>(initialEdges);
+  const { setIsSourceHandleReconnecting, setIsEdgeActive, setSavedEdgePath } = useAppStore();
+
   // console.log(edges);
 
   // 코너 포인트 ID 생성 유틸리티 함수
@@ -292,7 +294,18 @@ export default function EditableEdgeFlow() {
     },
     [setEdges],
   );
-  const { setIsSourceHandleReconnecting, setIsEdgeActive, setSavedEdgePath } = useAppStore();
+
+  // 키보드 이벤트 처리
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      // Delete 키가 눌렸을 때
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        // 선택된 엣지만 필터링하여 제거
+        setEdges((eds) => eds.filter((edge) => !edge.selected));
+      }
+    },
+    [setEdges],
+  );
 
   return (
     <ReactFlow
@@ -325,6 +338,7 @@ export default function EditableEdgeFlow() {
       isValidConnection={isValidConnection}
       fitView
       fitViewOptions={fitViewOptions}
+      onKeyDown={handleKeyDown}
     >
       <Background />
       <Panel position="top-left">

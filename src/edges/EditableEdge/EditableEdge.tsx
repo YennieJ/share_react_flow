@@ -51,8 +51,10 @@ export function EditableEdgeComponent({
   // 컨트롤 포인트 표시 여부 결정
   // 엣지가 선택되었거나 연결된 노드가 선택된 경우에만 표시
   const shouldShowPoints = useStore((store) => {
-    const sourceNode = store.nodeLookup.get(source)!;
-    const targetNode = store.nodeLookup.get(target)!;
+    const sourceNode = store.nodeLookup.get(source);
+    const targetNode = store.nodeLookup.get(target);
+
+    if (!sourceNode || !targetNode) return false;
 
     return selected || sourceNode.selected || targetNode.selected;
   });
@@ -84,7 +86,7 @@ export function EditableEdgeComponent({
   );
 
   // 엣지 경로 생성에 사용될 포인트 배열
-  const pathPoints = [sourceOrigin, ...data.cornerPoints, targetOrigin];
+  const pathPoints = [sourceOrigin, ...(data?.cornerPoints ?? []), targetOrigin];
 
   // 컨트롤 포인트 계산
   const controlPoints = getControlPoints(pathPoints, data.algorithm);

@@ -96,7 +96,7 @@ export default function EditableEdgeFlow() {
   }, []);
 
   const onNodeDrag = useCallback(
-    (_, node: Node) => {
+    (_event: React.MouseEvent, node: Node) => {
       const nodeId = node.id;
       const updatedEdges = [...edges];
       let edgesChanged = false;
@@ -187,7 +187,7 @@ export default function EditableEdgeFlow() {
   }, []);
 
   const onNodeDragStop = useCallback(
-    (_, node: Node) => {
+    (_event: React.MouseEvent, node: Node) => {
       const nodeId = node.id;
       let hasChanges = false;
       const updatedEdges = [...edges];
@@ -309,7 +309,7 @@ export default function EditableEdgeFlow() {
 
   return (
     <ReactFlow
-      onReconnectStart={(event, edge, handleType) => {
+      onReconnectStart={(_event, edge, handleType) => {
         // 현재 재연결 중인 핸들 타입 저장
         setIsSourceHandleReconnecting(handleType === 'target');
         setIsEdgeActive(edge.data?.isActive || false);
